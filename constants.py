@@ -1,5 +1,7 @@
 
 
+BASE_R0 = 2.65
+
 # Total population, N.
 #dola denver est 2020 (july) 737855\
 POP_DENVER = 737855
