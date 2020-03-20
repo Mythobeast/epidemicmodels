@@ -120,7 +120,7 @@ class SEIRHModel:
 		results = odeint(deriv_seirh, init, time_domain, args=(self,))
 		(d_susceptible, d_incubating, d_infectious, d_isolated, d_noncritical,
 				d_critical, d_icu, d_recovered, d_dead) = results.T
-		self.total_days += days - 1
+		self.total_days += days
 		self.susceptible.extend(d_susceptible)
 		self.incubating.extend(d_incubating)
 		self.infectious.extend(d_infectious)
@@ -165,6 +165,10 @@ def test():
 	model.set_r0(BASE_R0)
 	model.recalculate()
 	model.run_period(160)
+	date_offsets = [30,                45,           53,          60,   68,     159]
+	r0_values  = [BASE_R0, BASE_R0 - .2, BASE_R0 - .5, BASE_R0 - 1, 1.55, BASE_R0]
+
+	model.run_r0_set(date_offsets, r0_values)
 
 	u_susc = model.susceptible.domain
 	u_incu = model.incubating.domain
@@ -189,7 +193,7 @@ def test():
 	# Ic = model.I_domain
 	# Rc = model.R_domain
 
-	time_domain = np.linspace(0, model.total_days+1, model.total_days+2)
+	time_domain = np.linspace(0, model.total_days, model.total_days+1)
 	hospitalized = []
 	for itr in range(0, len(u_h_cr)):
 		hospitalized.append(u_h_no[itr] + u_h_cr[itr] + u_h_ic[itr])
