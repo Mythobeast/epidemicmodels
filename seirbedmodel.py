@@ -205,7 +205,7 @@ def test():
 	ax.plot(time_domain, u_h_no, color=TAB_COLORS[10], alpha=.5, lw=2, label='Hosp Noncrit', linestyle=':')
 	ax.plot(time_domain, u_h_cr, color=TAB_COLORS[12], alpha=.5, lw=2, label='Hosp Crit', linestyle=':')
 	ax.plot(time_domain, u_h_ic, color=(1,0,0), alpha=.5, lw=2, label='ICU', linestyle=':')
-	ax.plot(time_domain, hospitalized, color=(1,0,0), alpha=1, lw=2, label='ICU', linestyle='-')
+	ax.plot(time_domain, hospitalized, color=(1,0,0), alpha=1, lw=2, label='Total Hospitalized', linestyle='-')
 	ax.plot(time_domain, u_reco, color=(0,.5,0), alpha=.5, lw=2, label='Recovered', linestyle='--')
 	ax.plot(time_domain, u_dead, color=(0,0,0), alpha=.5, lw=2, label='Dead', linestyle='--')
 
