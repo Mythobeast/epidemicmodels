@@ -17,7 +17,6 @@ def deriv_sir(y, t, model):
 	dSdt = -infections
 	dIdt = infections - recoveries
 	dRdt = recoveries
-	print(f"S_0 = {S_0}, infections = {infections}")
 	return dSdt, dIdt, dRdt
 
 class SIRModel(EpidemicModel):
@@ -57,8 +56,6 @@ class SIRModel(EpidemicModel):
 			self.run_period(span)
 			prev_date = date_offsets[itr]
 
-
-
 def test_sir():
 	sirmodel = SIRModel()
 
@@ -97,6 +94,13 @@ def test_sir():
 		ax.spines[spine].set_visible(False)
 
 	outfilename = "_".join(chart_title.replace("|"," ").replace(":", " ").replace(".", " ").split())
+
+
+	# Write a CSV to this directory
+	with open(f"{outfilename}.csv", 'w') as outfile:
+		for itr in range(0, len(Su)):
+			outfile.write(f"{Su[itr]:.6f}, {Iu[itr]:.6f}, {Ru[itr]:.6f}\n")
+
 	plt.savefig(f"{outfilename}.png", bbox_inches="tight")
 	# plt.savefig("Model_SIR_Denver_R0=23_21_Days_FirstCase.png", bbox_inches="tight")
 	plt.show()
