@@ -203,7 +203,7 @@ def test():
 	# ax = fig.add_subplot(111, axis_bgcolor='#dddddd', axisbelow=True)
 	ax = fig.add_subplot(111, axisbelow=True)
 	ax.plot(time_domain, u_susc,  color=(0,0,1), alpha=.5, lw=2, label='Susceptible', linestyle='-')
-	ax.plot(time_domain, u_incu,  color=TABLEAU_ORANGE, alpha=0.5, lw=2, label='Exposed', linestyle='-')
+	ax.plot(time_domain, u_incu,  color=TABLEAU_ORANGE, alpha=0.1, lw=2, label='Exposed', linestyle='-')
 	ax.plot(time_domain, u_infe, color=TABLEAU_RED, alpha=0.5, lw=2, label='Infected', linestyle='-')
 	ax.plot(time_domain, u_isol, color=TAB_COLORS[8], alpha=.5, lw=2, label='Home Iso', linestyle='-')
 	ax.plot(time_domain, u_h_no, color=TAB_COLORS[10], alpha=.5, lw=2, label='Hosp Noncrit', linestyle=':')
