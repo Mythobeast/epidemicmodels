@@ -8,7 +8,7 @@ class EpidemicModel:
 		self.dayspergen = 6.8
 		self.r0 = 2.65
 
-		self.succeptible = self.population - 1
+		self.susceptible = self.population - 1
 		self.infected = 1
 		self.recovered = 0
 
@@ -23,7 +23,7 @@ class EpidemicModel:
 		self.R_domain = []
 
 	def reset(self):
-		self.succeptible = self.population - 1
+		self.susceptible = self.population - 1
 		self.infected = 1
 		self.recovered = 0
 		self.total_days = 0

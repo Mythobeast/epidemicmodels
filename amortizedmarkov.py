@@ -21,7 +21,6 @@ class ProbState:
 		total = 0.0
 		for state in self.exit_states:
 			total += state.distribution
-		total *= self.period
 		for state in self.exit_states:
 			state.probability = state.distribution / (total * self.period)
 

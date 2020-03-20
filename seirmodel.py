@@ -42,7 +42,7 @@ class SEIRModel(EpidemicModel):
 	def run_period(self, days):
 		self.time_domain = np.linspace(0, days, days)
 		# Initial conditions vector
-		init = self.succeptible, self.exposed, self.infected, self.recovered
+		init = self.susceptible, self.exposed, self.infected, self.recovered
 		# Integrate the SIR equations over the time grid, t.
 		results = odeint(deriv_seir, init, self.time_domain, args=(self.population, self.alpha, self.beta, self.gamma))
 		S, E, I, R = results.T
@@ -51,13 +51,13 @@ class SEIRModel(EpidemicModel):
 		self.E_domain.extend(E)
 		self.I_domain.extend(I)
 		self.R_domain.extend(R)
-		self.succeptible = self.S_domain.pop()
+		self.susceptible = self.S_domain.pop()
 		self.exposed = self.E_domain.pop()
 		self.infected = self.I_domain.pop()
 		self.recovered = self.R_domain.pop()
 
 	def run_r0_set(self, date_offsets, r0_values):
-		self.succeptible = self.population - self.infected - self.recovered - self.exposed
+		self.susceptible = self.population - self.infected - self.recovered - self.exposed
 
 		prev_date = 0
 		for itr in range(0, len(date_offsets)):

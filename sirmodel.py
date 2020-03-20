@@ -11,9 +11,14 @@ from constants import *
 
 def deriv_sir(y, t, model):
 	S_0, I_0, R_0 = y
+	print(f"{S_0}, {I_0}, {R_0} {model.gamma}")
 
 	infections = model.beta * S_0 * I_0 / model.population
+
 	recoveries = model.gamma * I_0
+
+	print(f"Returning:inf {infections}, rec {recoveries}")
+
 	dSdt = -infections
 	dIdt = infections - recoveries
 	dRdt = recoveries
@@ -31,9 +36,9 @@ class SIRModel(EpidemicModel):
 		self.gamma = 1.0 / self.dayspergen
 
 	def run_period(self, days):
-		time_domain = np.linspace(0, days, days)
+		time_domain = np.linspace(0, days, days+1)
 		# Initial conditions vector
-		init = self.succeptible, self.infected, self.recovered
+		init = self.susceptible, self.infected, self.recovered
 		# Integrate the SIR equations over the time grid, t.
 		results = odeint(deriv_sir, init, time_domain, args=(self,))
 		S, I, R = results.T
@@ -41,12 +46,12 @@ class SIRModel(EpidemicModel):
 		self.S_domain.extend(S)
 		self.I_domain.extend(I)
 		self.R_domain.extend(R)
-		self.succeptible = self.S_domain.pop()
+		self.susceptible = self.S_domain.pop()
 		self.infected = self.I_domain.pop()
 		self.recovered = self.R_domain.pop()
 
 	def run_r0_set(self, date_offsets, beta_values):
-		self.succeptible = self.population - self.infected - self.recovered - self.exposed
+		self.susceptible = self.population - self.infected - self.recovered - self.exposed
 		self.beta = self.r0 / self.dayspergen
 
 		prev_date = 0
@@ -70,7 +75,7 @@ def test_sir():
 	Su = sirmodel.S_domain
 	Iu = sirmodel.I_domain
 	Ru = sirmodel.R_domain
-	time_domain = np.linspace(0, sirmodel.total_days, sirmodel.total_days)
+	time_domain = np.linspace(0, sirmodel.total_days, sirmodel.total_days+1)
 	fig = plt.figure(facecolor='w')
 	# ax = fig.add_subplot(111, axis_bgcolor='#dddddd', axisbelow=True)
 	ax = fig.add_subplot(111, axisbelow=True)
