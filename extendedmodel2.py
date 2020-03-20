@@ -6,19 +6,74 @@ from amortizedmarkov import ProbState
 from constants import *
 
 
+MAX_HOSPITAL_LOAD = 20000
+
+
+def adjust_for_overload(noncritical, critical, icu, d_noncritical, d_critical, d_icu, d_unhospitalized):
+	hospital_load = icu + critical + noncritical + d_icu + d_critical + d_noncritical
+	if hospital_load < MAX_HOSPITAL_LOAD:
+		return d_noncritical, d_critical, d_icu, d_unhospitalized
+
+	overload = hospital_load - MAX_HOSPITAL_LOAD
+	# First, noncritical are turned away
+	if overload < d_noncritical:
+		d_unhospitalized += overload
+		d_noncritical -= overload
+		return d_noncritical, d_critical, d_icu, d_unhospitalized
+
+	d_unhospitalized += d_noncritical
+	overload -= d_noncritical
+	d_noncritical = 0
+
+	# Second, noncritical are displaced
+	if overload < noncritical:
+		d_noncritical -= overload
+		d_unhospitalized += overload
+		return d_noncritical, d_critical, d_icu, d_unhospitalized
+
+	d_unhospitalized += noncritical
+	overload -= noncritical
+	d_noncritical -= noncritical
+
+	# third, critical are turned away
+	if overload < d_critical:
+		d_critical -= overload
+		d_unhospitalized += overload
+		return d_noncritical, d_critical, d_icu, d_unhospitalized
+
+	d_unhospitalized += d_critical
+	overload -= d_critical
+	d_critical = 0
+
+	# Fourth, ICU are turned away.
+	# Mathematically, it should never get here because all ICU are critical relocations
+	if overload < d_icu:
+		d_icu -= overload
+		d_unhospitalized += overload
+		return d_noncritical, d_critical, d_icu, d_unhospitalized
+
+	d_unhospitalized += d_icu
+	d_icu = 0
+
+	return d_noncritical, d_critical, d_icu, d_unhospitalized
+
+
 # The SEIR model differential equations.
 def deriv_seirh(y, t, model):
-	(i_susceptible, i_incubating, i_infectious, i_isolated, i_noncritical,
-	 h_critical, h_icu, recovered, dead) = y
+	(i_susceptible, i_incubating,
+		 i_infectious, i_isolated,
+		 i_noncritical, i_critical,
+		 i_icu, i_unhospitalized,
+		 i_recovered, i_dead) = y
 	new_infections = model.beta * i_susceptible * i_infectious / model.population
 
 	(new_symptomatic,) = model.incubating.get_state_redist(i_incubating)
 	new_isolated, new_noncritical, new_critical = model.infectious.get_state_redist(i_infectious)
 	(recovered1,) = model.isolated.get_state_redist(i_isolated)
 	(recovered2,) = model.h_noncritical.get_state_redist(i_noncritical)
-
-	(into_icu,) = model.h_critical.get_state_redist(h_critical)
-	recovered3, dead = model.h_icu.get_state_redist(h_icu)
+	(into_icu,) = model.h_critical.get_state_redist(i_critical)
+	recovered3, dead1 = model.h_icu.get_state_redist(i_icu)
+	recovered4, dead2 = model.unhospitalized.get_state_redist(i_unhospitalized)
 
 	d_susceptible = -new_infections
 	d_incubating = new_infections - new_symptomatic
@@ -26,12 +81,16 @@ def deriv_seirh(y, t, model):
 	d_isolated = new_isolated - recovered1
 	d_noncritical = new_noncritical - recovered2
 	d_critical = new_critical - into_icu
-	d_icu = into_icu - (recovered3 + dead)
-	d_recovered = recovered1 + recovered2 + recovered3
-	d_dead = dead
-	print(f"i_isolated {i_isolated}, new_isolated {new_isolated}, recovered1 {recovered1} d_isolated {d_isolated}")
+	d_icu = into_icu - (recovered3 + dead1)
+	d_unhospitalized = -(recovered4 + dead2)
+	d_recovered = recovered1 + recovered2 + recovered3 + recovered4
+	d_dead = dead1 + dead2\
+
+	(d_noncritical, d_critical, d_icu, d_unhospitalized) = adjust_for_overload(
+		i_noncritical, i_critical, i_icu, d_noncritical, d_critical, d_icu, d_unhospitalized)
+
 	return (d_susceptible, d_incubating, d_infectious, d_isolated, d_noncritical,
-	        d_critical, d_icu, d_recovered, d_dead)
+	        d_critical, d_icu, d_unhospitalized, d_recovered, d_dead)
 
 
 # Like SEIR, but moves 15% of the "recovered" into the hospital for an average length hospital stay
@@ -47,6 +106,7 @@ class SEIRHModel:
 		self.incubating = ProbState(period=3)
 		self.infectious = ProbState(period=3.8, count=1)
 		self.isolated = ProbState(period=14)
+		self.unhospitalized = ProbState(period=14)
 		self.h_noncritical = ProbState(period=8)
 		self.h_critical = ProbState(period=6)
 		self.h_icu = ProbState(period=10)
@@ -58,6 +118,10 @@ class SEIRHModel:
 
 		self.isolated.add_exit_state(self.recovered, 1)
 		self.isolated.normalize_states_over_period()
+
+		self.unhospitalized.add_exit_state(self.recovered, .25)
+		self.unhospitalized.add_exit_state(self.dead, .75)
+		self.unhospitalized.normalize_states_over_period()
 
 		self.infectious.add_exit_state(self.isolated, .85)
 		self.infectious.add_exit_state(self.h_noncritical, .11)
@@ -105,19 +169,20 @@ class SEIRHModel:
 		# Initial conditions vector
 
 		init = (self.susceptible.count,
-		        self.incubating.count,
-		        self.infectious.count,
-		        self.isolated.count,
-		        self.h_noncritical.count,
-		        self.h_critical.count,
-		        self.h_icu.count,
-		        self.recovered.count,
-		        self.dead.count)
+			self.incubating.count,
+			self.infectious.count,
+			self.isolated.count,
+			self.h_noncritical.count,
+			self.h_critical.count,
+			self.h_icu.count,
+			self.unhospitalized.count,
+			self.recovered.count,
+			self.dead.count)
 		print(f"{init}")
 		# Integrate the SIR equations over the time grid, t.
 		results = odeint(deriv_seirh, init, time_domain, args=(self,))
 		(d_susceptible, d_incubating, d_infectious, d_isolated, d_noncritical,
-		 d_critical, d_icu, d_recovered, d_dead) = results.T
+		 d_critical, d_icu, d_unhospitalized, d_recovered, d_dead) = results.T
 		self.total_days += days
 		self.susceptible.extend(d_susceptible)
 		self.incubating.extend(d_incubating)
@@ -126,6 +191,7 @@ class SEIRHModel:
 		self.h_noncritical.extend(d_noncritical)
 		self.h_critical.extend(d_critical)
 		self.h_icu.extend(d_icu)
+		self.unhospitalized.extend(d_unhospitalized)
 		self.recovered.extend(d_recovered)
 		self.dead.extend(d_dead)
 
@@ -231,8 +297,8 @@ def test():
 	with open(f"{outfilename}.csv", 'w') as outfile:
 		for itr in range(0, len(u_susc)):
 			outfile.write(f"{u_susc[itr]:.6f}, {u_incu[itr]:.6f}, {u_infe[itr]:.6f}, {u_isol[itr]:.6f}"
-			              f", {u_h_no[itr]:.6f}, {u_h_cr[itr]:.6f}, {u_h_ic[itr]:.6f}, {u_reco[itr]:.6f}"
-			              f", {u_dead[itr]:.6f}, {hospitalized[itr]:.6f}\n")
+					f", {u_h_no[itr]:.6f}, {u_h_cr[itr]:.6f}, {u_h_ic[itr]:.6f}, {u_reco[itr]:.6f}"
+					f", {u_dead[itr]:.6f}, {hospitalized[itr]:.6f}\n")
 
 	plt.savefig(f"{outfilename}.png", bbox_inches="tight")
 	plt.show()
