@@ -48,18 +48,19 @@ class AgeGroup:
 		self.h_noncrit.add_exit_state(self.recovered, 1)
 		self.h_noncrit.normalize_states_over_period()
 
-		self.h_crit.add_exit_state(self.h_icu, 1)
+		self.h_icu.add_exit_state(self.deceased, self.stats.icu_deathrate)
+		self.h_icu.add_exit_state(self.h_crit, self.stats.icu_recovery_rate)
+		self.h_icu.normalize_states_over_period()
+
+		self.h_crit.add_exit_state(self.recovered, 1)
 		self.h_crit.normalize_states_over_period()
 
-		self.h_icu.add_exit_state(self.deceased, self.stats.icu_deathrate)
-		self.h_icu.add_exit_state(self.recovered, self.stats.icu_recovery_rate)
-		self.h_icu.normalize_states_over_period()
 
 	# Add N people to the list of infected
 	def apply_infections(self, infections):
 		self.isolated.store_pending(infections * self.stats.isolate)
 		self.h_noncrit.store_pending(infections * self.stats.h_noncrit)
-		self.h_crit.store_pending(infections * self.stats.h_crit)
+		self.h_icu.store_pending(infections * self.stats.h_crit)
 
 	def calculate_redistributions(self):
 		self.isolated.pass_downstream()
@@ -69,14 +70,12 @@ class AgeGroup:
 
 	def apply_pending(self):
 #		print(f"apply_pending {self.name} ")
-
 		self.isolated.apply_pending()
 		self.h_noncrit.apply_pending()
 		self.h_crit.apply_pending()
 		self.h_icu.apply_pending()
 		self.recovered.apply_pending()
 		self.deceased.apply_pending()
-
 
 
 class ProbState:
@@ -120,7 +119,6 @@ class ProbState:
 	def apply_pending(self):
 #		if self.name != None:
 #		print(f"Apply Pending {self.name} {len(self.domain)}")
-
 		self.count += self.pending
 		self.pending = 0
 		self.domain.append(self.count)

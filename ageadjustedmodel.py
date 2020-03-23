@@ -146,19 +146,6 @@ def main():
 	u_reco = model.sum_recovered
 	u_dead = model.sum_deceased
 
-	# model.reset()
-	#
-	# # for calculating the effects of social distancing over time
-	# date_offsets = [30,                45,           53,          60,   68,     159]
-	# r0_values  = [BASE_R0, BASE_R0 - .2, BASE_R0 - .5, BASE_R0 - 1, 1.55, BASE_R0]
-	#
-	# model.run_r0_set(date_offsets, r0_values)
-	#
-	# Sc = model.S_domain
-	# Ec = model.E_domain
-	# Ic = model.I_domain
-	# Rc = model.R_domain
-
 	time_domain = np.linspace(0, model.total_days, model.total_days + 1)
 	hospitalized = []
 	for itr in range(0, len(u_h_cr)):
@@ -167,16 +154,19 @@ def main():
 	fig = plt.figure(facecolor='w')
 	# ax = fig.add_subplot(111, axis_bgcolor='#dddddd', axisbelow=True)
 	ax = fig.add_subplot(111, axisbelow=True)
-	ax.plot(time_domain, u_susc, color=(0, 0, 1), alpha=.5, lw=2, label='Susceptible', linestyle='-')
-	ax.plot(time_domain, u_incu, color=TABLEAU_ORANGE, alpha=0.1, lw=2, label='Exposed', linestyle='-')
-	ax.plot(time_domain, u_infe, color=TABLEAU_RED, alpha=0.5, lw=2, label='Infected', linestyle='-')
-	ax.plot(time_domain, u_isol, color=TAB_COLORS[8], alpha=.5, lw=2, label='Home Iso', linestyle='-')
+#	ax.plot(time_domain, u_susc, color=(0, 0, 1), alpha=.5, lw=2, label='Susceptible', linestyle='-')
+#	ax.plot(time_domain, u_incu, color=TABLEAU_ORANGE, alpha=0.1, lw=2, label='Exposed', linestyle='-')
+#	ax.plot(time_domain, u_infe, color=TABLEAU_RED, alpha=0.5, lw=2, label='Infected', linestyle='-')
+#	ax.plot(time_domain, u_isol, color=TAB_COLORS[8], alpha=.5, lw=2, label='Home Iso', linestyle='-')
 	ax.plot(time_domain, u_h_no, color=TAB_COLORS[10], alpha=.5, lw=2, label='Hosp Noncrit', linestyle=':')
 	ax.plot(time_domain, u_h_cr, color=TAB_COLORS[12], alpha=.5, lw=2, label='Hosp Crit', linestyle=':')
 	ax.plot(time_domain, u_h_ic, color=(1, 0, 0), alpha=.5, lw=2, label='ICU', linestyle=':')
 	ax.plot(time_domain, hospitalized, color=(1, 0, 0), alpha=1, lw=2, label='Total Hospitalized', linestyle='-')
-	ax.plot(time_domain, u_reco, color=(0, .5, 0), alpha=.5, lw=2, label='Recovered', linestyle='--')
+#	ax.plot(time_domain, u_reco, color=(0, .5, 0), alpha=.5, lw=2, label='Recovered', linestyle='--')
 	ax.plot(time_domain, u_dead, color=(0, 0, 0), alpha=.5, lw=2, label='Dead', linestyle='--')
+
+	ax.plot(time_domain, [511] * (model.total_days + 1), color=(0, 0, .5), alpha=.5, lw=2, label='Bed Capacity', linestyle='-')
+	ax.plot(time_domain, [77] * (model.total_days + 1), color=(0, 0, .5), alpha=.5, lw=2, label='ICU Capacity', linestyle='-')
 
 	ax.set_xlabel('Days')
 	ax.set_ylabel('Number')
