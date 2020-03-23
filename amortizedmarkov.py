@@ -111,10 +111,8 @@ class ProbState:
 	def pass_downstream(self):
 		# if self.name != None:
 		# 	print(f"pass_downstream {self.name}: {self.count} / {self.period}")
-		passed = 0.0
 		for state in self.exit_states:
-			passed += state.pass_downstream(self.count)
-		self.count -= passed
+			self.pending -= state.pass_downstream(self.count)
 
 	def store_pending(self, value):
 		self.pending += value

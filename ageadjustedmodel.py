@@ -24,7 +24,6 @@ class AgeAdjustedModel:
 		self.infectious.add_exit_state(self.isolated_holding, 1)
 		self.infectious.normalize_states_over_period()
 
-
 		self.subgroups = dict()
 		for key, value in AGE_BASED_RATES.items():
 			self.subgroups[key] = AgeGroup(value, name=key)
@@ -37,13 +36,17 @@ class AgeAdjustedModel:
 		self.sum_deceased = None
 
 	def gather_sums(self):
-		self.sum_isolated = np.linspace(0, len(self.susceptible.domain)-1)
-		self.sum_noncrit = np.linspace(0, len(self.susceptible.domain)-1)
-		self.sum_crit = np.linspace(0, len(self.susceptible.domain)-1)
-		self.sum_icu = np.linspace(0, len(self.susceptible.domain)-1)
-		self.sum_recovered = np.linspace(0, len(self.susceptible.domain)-1)
-		self.sum_deceased = np.linspace(0, len(self.susceptible.domain)-1)
+		print(f"base:{len(self.susceptible.domain)}")
+		self.sum_isolated = [0] * len(self.susceptible.domain)
+		self.sum_noncrit =  [0] * len(self.susceptible.domain)
+		self.sum_crit =  [0] * len(self.susceptible.domain)
+		self.sum_icu =  [0] * len(self.susceptible.domain)
+		self.sum_recovered =  [0] * len(self.susceptible.domain)
+		self.sum_deceased =  [0] * len(self.susceptible.domain)
+		print(f"final isolated 0-9:{len(self.subgroups['0-9'].isolated.domain)} {self.subgroups['0-9'].isolated.pending}, {self.subgroups['0-9'].isolated.count}")
+
 		for key, value in self.subgroups.items():
+			print(f"adding isolated {key}:  {self.sum_isolated} {value.isolated.domain}")
 			self.sum_isolated  = np.add(self.sum_isolated, value.isolated.domain)
 			self.sum_noncrit   = np.add(self.sum_noncrit, value.h_noncrit.domain)
 			self.sum_crit      = np.add(self.sum_crit, value.h_crit.domain)
@@ -95,32 +98,32 @@ class AgeAdjustedModel:
 		self.incubating.store_pending(new_infections)
 		self.incubating.pass_downstream()
 		self.infectious.pass_downstream()
-		print(f"Incubating: {self.incubating.pending}, {self.incubating.count}")
-		print(f"infectious: {self.infectious.pending}, {self.infectious.count}")
 
-		into_iso = self.isolated_holding.pending
+		diagnosed = self.isolated_holding.pending
 		self.isolated_holding.pending = 0
 
 		for key, agegroup in self.subgroups.items():
-			subpop = into_iso * agegroup.stats.pop_dist
+			subpop = diagnosed * agegroup.stats.pop_dist
 			agegroup.apply_infections(subpop)
 			agegroup.calculate_redistributions()
+#		print(f"isolated 0-9:{len(self.subgroups['0-9'].isolated.domain)} {self.subgroups['0-9'].isolated.pending}, {self.subgroups['0-9'].isolated.count}")
 
 		self.susceptible.apply_pending()
 		self.incubating.apply_pending()
 		self.infectious.apply_pending()
-		print(f"Incubating2: {self.incubating.pending}, {self.incubating.count}")
-		print(f"infectious2: {self.infectious.pending}, {self.infectious.count}")
 
 		for key, agegroup in self.subgroups.items():
 			agegroup.apply_pending()
+
+#		print(f"isolated 0-9:{len(self.subgroups['0-9'].isolated.domain)} {self.subgroups['0-9'].isolated.pending}, {self.subgroups['0-9'].isolated.count}")
+
 		self.total_days += 1
 
 
 
 
 
-def test():
+def main():
 	model = AgeAdjustedModel()
 
 	# ref: dola denver est 2020 (july) 737855
@@ -136,12 +139,12 @@ def test():
 	u_susc = model.susceptible.domain
 	u_incu = model.incubating.domain
 	u_infe = model.infectious.domain
-	u_isol = model.sum_isolated.domain
-	u_h_no = model.sum_noncrit.domain
-	u_h_cr = model.sum_crit.domain
-	u_h_ic = model.sum_icu.domain
-	u_reco = model.sum_recovered.domain
-	u_dead = model.sum_deceased.domain
+	u_isol = model.sum_isolated
+	u_h_no = model.sum_noncrit
+	u_h_cr = model.sum_crit
+	u_h_ic = model.sum_icu
+	u_reco = model.sum_recovered
+	u_dead = model.sum_deceased
 
 	# model.reset()
 	#
@@ -204,4 +207,4 @@ def test():
 
 
 if __name__ == '__main__':
-	test()
+	main()

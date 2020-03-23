@@ -20,8 +20,6 @@ AGE6x = '60-69'
 AGE7x = '70-79'
 AGE8x = '80+'
 
-
-
 # From: https://demography.dola.colorado.gov/population/
 AGE_DISTRIBUTION = {
 	AGE0x: .1184998,
