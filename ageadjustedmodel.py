@@ -1,76 +1,55 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.integrate import odeint
 
-from amortizedmarkov import ProbState
+from amortizedmarkov import ProbState, AgeGroup
 from constants import *
-
-# The SEIR model differential equations.
-def deriv_seirh(y, t, model):
-	(i_susceptible, i_incubating, i_infectious, i_isolated, i_noncritical,
-	 h_critical, h_icu, recovered, dead) = y
-	new_infections = model.beta * i_susceptible * i_infectious / model.population
-
-	(new_symptomatic,) = model.incubating.get_state_redist(i_incubating)
-	new_isolated, new_noncritical, new_critical = model.infectious.get_state_redist(i_infectious)
-	(recovered1,) = model.isolated.get_state_redist(i_isolated)
-	(recovered2,) = model.h_noncritical.get_state_redist(i_noncritical)
-
-	(into_icu,) = model.h_critical.get_state_redist(h_critical)
-	recovered3, dead = model.h_icu.get_state_redist(h_icu)
-
-	d_susceptible = -new_infections
-	d_incubating = new_infections - new_symptomatic
-	d_infectious = new_symptomatic - (new_isolated + new_noncritical + new_critical)
-	d_isolated = new_isolated - recovered1
-	d_noncritical = new_noncritical - recovered2
-	d_critical = new_critical - into_icu
-	d_icu = into_icu - (recovered3 + dead)
-	d_recovered = recovered1 + recovered2 + recovered3
-	d_dead = dead
-
-	return (d_susceptible, d_incubating, d_infectious, d_isolated, d_noncritical,
-	        d_critical, d_icu, d_recovered, d_dead)
 
 
 # Like SEIR, but moves 15% of the "recovered" into the hospital for an average length hospital stay
 # https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology
-class SEIRHModel:
+class AgeAdjustedModel:
 	def __init__(self):
 		self.r0 = 2.65
 		self.total_days = 0
 		self.population = POP_DENVER
 
-		self.susceptible = ProbState(period=0, count=self.population)
-		self.incubating = ProbState(period=3)
-		self.infectious = ProbState(period=3.8, count=1)
-		self.isolated = ProbState(period=14)
-		self.h_noncritical = ProbState(period=8)
-		self.h_critical = ProbState(period=6)
-		self.h_icu = ProbState(period=10)
-		self.recovered = ProbState(period=10000)
-		self.dead = ProbState(period=10000)
+		self.susceptible = ProbState(period=0, count=self.population-1, name='susceptible')
+		self.incubating = ProbState(period=3, name='incubating')
+		self.infectious = ProbState(period=3.8, count=1, name='infectious')
+		self.isolated_holding = ProbState(period=90, name='isolated_holding')
 
 		self.incubating.add_exit_state(self.infectious, 1)
 		self.incubating.normalize_states_over_period()
 
-		self.isolated.add_exit_state(self.recovered, 1)
-		self.isolated.normalize_states_over_period()
-
-		self.infectious.add_exit_state(self.isolated, .85)
-		self.infectious.add_exit_state(self.h_noncritical, .11)
-		self.infectious.add_exit_state(self.h_critical, .4)
+		self.infectious.add_exit_state(self.isolated_holding, 1)
 		self.infectious.normalize_states_over_period()
 
-		self.h_noncritical.add_exit_state(self.recovered, 1)
-		self.h_noncritical.normalize_states_over_period()
 
-		self.h_critical.add_exit_state(self.recovered, 1)
-		self.h_critical.normalize_states_over_period()
+		self.subgroups = dict()
+		for key, value in AGE_BASED_RATES.items():
+			self.subgroups[key] = AgeGroup(value, name=key)
 
-		self.h_icu.add_exit_state(self.recovered, .75)
-		self.h_icu.add_exit_state(self.dead, .25)
-		self.h_icu.normalize_states_over_period()
+		self.sum_isolated = None
+		self.sum_noncrit = None
+		self.sum_crit = None
+		self.sum_icu = None
+		self.sum_recovered = None
+		self.sum_deceased = None
+
+	def gather_sums(self):
+		self.sum_isolated = np.linspace(0, len(self.susceptible.domain)-1)
+		self.sum_noncrit = np.linspace(0, len(self.susceptible.domain)-1)
+		self.sum_crit = np.linspace(0, len(self.susceptible.domain)-1)
+		self.sum_icu = np.linspace(0, len(self.susceptible.domain)-1)
+		self.sum_recovered = np.linspace(0, len(self.susceptible.domain)-1)
+		self.sum_deceased = np.linspace(0, len(self.susceptible.domain)-1)
+		for key, value in self.subgroups.items():
+			self.sum_isolated  = np.add(self.sum_isolated, value.isolated.domain)
+			self.sum_noncrit   = np.add(self.sum_noncrit, value.h_noncrit.domain)
+			self.sum_crit      = np.add(self.sum_crit, value.h_crit.domain)
+			self.sum_icu       = np.add(self.sum_icu, value.h_icu.domain)
+			self.sum_recovered = np.add(self.sum_recovered, value.recovered.domain)
+			self.sum_deceased  = np.add(self.sum_deceased, value.deceased.domain)
 
 	def reset(self):
 		self.total_days = 0
@@ -79,18 +58,13 @@ class SEIRHModel:
 		self.incubating.reset()
 		self.infectious.reset()
 		self.infectious.count = 1
-		self.isolated.reset()
-		self.h_noncritical.reset()
-		self.h_critical.reset()
-		self.h_icu.reset()
-		self.recovered.reset()
-		self.dead.reset()
+
+		self.subgroups = dict()
+		for key, value in AGE_BASED_RATES.items():
+			self.subgroups[key] = AgeGroup(value, name=key)
 
 	def set_r0(self, value):
 		self.r0 = value
-
-	def set_mean_generation_days(self, value):
-		self.dayspergen = value
 
 	def set_population(self, value):
 		self.population = value
@@ -99,82 +73,75 @@ class SEIRHModel:
 		self.beta = self.r0 / self.infectious.period
 
 	def run_period(self, days):
-		time_domain = np.linspace(0, days, days + 1)
-		# Initial conditions vector
-
-		init = (self.susceptible.count,
-				self.incubating.count,
-				self.infectious.count,
-				self.isolated.count,
-				self.h_noncritical.count,
-				self.h_critical.count,
-				self.h_icu.count,
-				self.recovered.count,
-				self.dead.count)
-		print(f"{init}")
 		# Integrate the SIR equations over the time grid, t.
-		results = odeint(deriv_seirh, init, time_domain, args=(self,))
-		(d_susceptible, d_incubating, d_infectious, d_isolated, d_noncritical,
-		 d_critical, d_icu, d_recovered, d_dead) = results.T
-		self.total_days += days
-		self.susceptible.extend(d_susceptible)
-		self.incubating.extend(d_incubating)
-		self.infectious.extend(d_infectious)
-		self.isolated.extend(d_isolated)
-		self.h_noncritical.extend(d_noncritical)
-		self.h_critical.extend(d_critical)
-		self.h_icu.extend(d_icu)
-		self.recovered.extend(d_recovered)
-		self.dead.extend(d_dead)
+		for _ in range(0, days):
+			self.step_day()
 
 	def run_r0_set(self, date_offsets, r0_values):
 		self.reset()
 
-		prev_date = 0
+		day_counter = 0
 		for itr in range(0, len(date_offsets)):
 			self.set_r0(r0_values[itr])
 			self.recalculate()
-			span = date_offsets[itr] - prev_date + 1
-			self.run_period(span)
-			prev_date = date_offsets[itr]
+			while day_counter < date_offsets[itr]:
+				self.step_day()
+				day_counter += 1
+
+	def step_day(self):
+		new_infections = self.beta * self.susceptible.count * self.infectious.count / self.population
+		print(f"Day {self.total_days}, {self.beta} * {self.susceptible.count} * {self.infectious.count} / {self.population} = {new_infections}")
+		self.susceptible.store_pending(-new_infections)
+		self.incubating.store_pending(new_infections)
+		self.incubating.pass_downstream()
+		self.infectious.pass_downstream()
+		print(f"Incubating: {self.incubating.pending}, {self.incubating.count}")
+		print(f"infectious: {self.infectious.pending}, {self.infectious.count}")
+
+		into_iso = self.isolated_holding.pending
+		self.isolated_holding.pending = 0
+
+		for key, agegroup in self.subgroups.items():
+			subpop = into_iso * agegroup.stats.pop_dist
+			agegroup.apply_infections(subpop)
+			agegroup.calculate_redistributions()
+
+		self.susceptible.apply_pending()
+		self.incubating.apply_pending()
+		self.infectious.apply_pending()
+		print(f"Incubating2: {self.incubating.pending}, {self.incubating.count}")
+		print(f"infectious2: {self.infectious.pending}, {self.infectious.count}")
+
+		for key, agegroup in self.subgroups.items():
+			agegroup.apply_pending()
+		self.total_days += 1
 
 
-# The SEIR model differential equations.
-def deriv_seir(y, t, N, alpha, beta, gamma):
-	S_0, E_0, I_0, R_0 = y
-	infections = beta * S_0 * I_0 / N
-	symptomatic = alpha * E_0
-	recoveries = gamma * I_0
-	dSdt = -infections
-	dEdt = infections - symptomatic
-	dIdt = symptomatic - recoveries
-	dRdt = recoveries
-	return dSdt, dEdt, dIdt, dRdt
+
 
 
 def test():
-	model = SEIRHModel()
+	model = AgeAdjustedModel()
 
 	# ref: dola denver est 2020 (july) 737855
 	# ref: https://www.colorado.gov/pacific/cdphe/2019-novel-coronavirus
 	model.set_population(POP_DENVER)
-	model.set_r0(BASE_R0)
-	model.recalculate()
-	model.run_period(160)
+
 	date_offsets = [30, 45, 53, 60, 68, 159]
 	r0_values = [BASE_R0, BASE_R0 - .2, BASE_R0 - .5, BASE_R0 - 1, 1.55, BASE_R0]
 
 	model.run_r0_set(date_offsets, r0_values)
+	model.gather_sums()
 
 	u_susc = model.susceptible.domain
 	u_incu = model.incubating.domain
 	u_infe = model.infectious.domain
-	u_isol = model.isolated.domain
-	u_h_no = model.h_noncritical.domain
-	u_h_cr = model.h_critical.domain
-	u_h_ic = model.h_icu.domain
-	u_reco = model.recovered.domain
-	u_dead = model.dead.domain
+	u_isol = model.sum_isolated.domain
+	u_h_no = model.sum_noncrit.domain
+	u_h_cr = model.sum_crit.domain
+	u_h_ic = model.sum_icu.domain
+	u_reco = model.sum_recovered.domain
+	u_dead = model.sum_deceased.domain
 
 	# model.reset()
 	#
