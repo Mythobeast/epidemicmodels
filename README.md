@@ -1,5 +1,8 @@
 # Epidemic Models
 
+These models originated as SIR and SEIR based models that used Python's differential equations models in order to generate curves. This method is still embodied in the sirmodel.py and seirmodel.py files.
+
+When attempting to deal with branching, standard differential equations proved inadequate, so we switched to a Markov chain model. The math works out identically. 
 
 - calculates SIR, SEIR, and an extended model that includes some hospital capacities and outcomes
 - outputs results as graph as PNG and data as CSV
