@@ -55,7 +55,6 @@ class AgeGroup:
 		self.h_crit.add_exit_state(self.recovered, 1)
 		self.h_crit.normalize_states_over_period()
 
-
 	# Add N people to the list of infected
 	def apply_infections(self, infections):
 		self.isolated.store_pending(infections * self.stats.isolate)
@@ -86,6 +85,12 @@ class ProbState:
 		self.exit_states = []
 		self.domain = [count]
 		self.pending = 0
+		self.capacity = None
+		self.overflowstate = None
+
+	def set_capacity(self, capacity, overflowstate):
+		self.capacity = capacity
+		self.overflowstate = overflowstate
 
 	def add_exit_state(self, probability, state):
 		self.exit_states.append(ExitState(probability, state))
@@ -115,6 +120,11 @@ class ProbState:
 
 	def store_pending(self, value):
 		self.pending += value
+		if self.capacity != None and (self.count + self.pending) > self.capacity:
+			pass_along = (self.count + self.pending) > self.capacity
+			self.pending -= pass_along
+			self.overflowstate.store_pending(pass_along)
+
 
 	def apply_pending(self):
 #		if self.name != None:

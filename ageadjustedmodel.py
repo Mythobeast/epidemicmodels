@@ -165,8 +165,8 @@ def main():
 #	ax.plot(time_domain, u_reco, color=(0, .5, 0), alpha=.5, lw=2, label='Recovered', linestyle='--')
 	ax.plot(time_domain, u_dead, color=(0, 0, 0), alpha=.5, lw=2, label='Dead', linestyle='--')
 
-	ax.plot(time_domain, [511] * (model.total_days + 1), color=(0, 0, .5), alpha=.5, lw=2, label='Bed Capacity', linestyle='-')
-	ax.plot(time_domain, [77] * (model.total_days + 1), color=(0, 0, .5), alpha=.5, lw=2, label='ICU Capacity', linestyle='-')
+	ax.plot(time_domain, [511] * (model.total_days + 1), color=(0, 0, 1), alpha=1, lw=1, label='511 Beds', linestyle='-')
+	ax.plot(time_domain, [77] * (model.total_days + 1), color=(1, 0, 0), alpha=1, lw=1, label='77 ICU units', linestyle='-')
 
 	ax.set_xlabel('Days')
 	ax.set_ylabel('Number')
