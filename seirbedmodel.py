@@ -5,7 +5,6 @@ from scipy.integrate import odeint
 from amortizedmarkov import ProbState
 from constants import *
 
-
 # The SEIR model differential equations.
 def deriv_seirh(y, t, model):
 	(i_susceptible, i_incubating, i_infectious, i_isolated, i_noncritical,
@@ -29,7 +28,7 @@ def deriv_seirh(y, t, model):
 	d_icu = into_icu - (recovered3 + dead)
 	d_recovered = recovered1 + recovered2 + recovered3
 	d_dead = dead
-	print(f"i_isolated {i_isolated}, new_isolated {new_isolated}, recovered1 {recovered1} d_isolated {d_isolated}")
+
 	return (d_susceptible, d_incubating, d_infectious, d_isolated, d_noncritical,
 	        d_critical, d_icu, d_recovered, d_dead)
 
@@ -43,7 +42,6 @@ class SEIRHModel:
 		self.population = POP_DENVER
 
 		self.susceptible = ProbState(period=0, count=self.population)
-		print(f"Susceptible = {self.susceptible.count}")
 		self.incubating = ProbState(period=3)
 		self.infectious = ProbState(period=3.8, count=1)
 		self.isolated = ProbState(period=14)
@@ -105,14 +103,14 @@ class SEIRHModel:
 		# Initial conditions vector
 
 		init = (self.susceptible.count,
-		        self.incubating.count,
-		        self.infectious.count,
-		        self.isolated.count,
-		        self.h_noncritical.count,
-		        self.h_critical.count,
-		        self.h_icu.count,
-		        self.recovered.count,
-		        self.dead.count)
+				self.incubating.count,
+				self.infectious.count,
+				self.isolated.count,
+				self.h_noncritical.count,
+				self.h_critical.count,
+				self.h_icu.count,
+				self.recovered.count,
+				self.dead.count)
 		print(f"{init}")
 		# Integrate the SIR equations over the time grid, t.
 		results = odeint(deriv_seirh, init, time_domain, args=(self,))
