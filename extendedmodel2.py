@@ -67,7 +67,6 @@ def deriv_seirh(y, t, model):
 		 i_noncritical, i_critical,
 		 i_icu, i_unhospitalized,
 		 i_recovered, i_dead) = y
-	print(f"y={y}")
 	pop_sum = (i_susceptible + i_incubating + i_infectious + i_isolated + i_noncritical + i_critical +
 		 i_icu + i_unhospitalized + i_recovered + i_dead)
 	if (pop_sum - POP_FRONTRANGE) > 10:
@@ -96,8 +95,6 @@ def deriv_seirh(y, t, model):
 	(d_noncritical, d_critical, d_icu, d_unhospitalized) = adjust_for_overload(
 		i_noncritical, i_critical, i_icu, d_noncritical, d_critical, d_icu, d_unhospitalized)
 
-	print(f"Outlist: {d_susceptible}, {d_incubating}, {d_infectious}, {d_isolated}, {d_noncritical},"\
-			f"{d_critical}, {d_icu}, {d_unhospitalized}, {d_recovered}, {d_dead}")
 	balances = (d_susceptible + d_incubating + d_infectious + d_isolated + d_noncritical + d_critical + \
 	           d_icu + d_unhospitalized + d_recovered + d_dead)
 	if int(balances) != 0:
@@ -191,7 +188,6 @@ class HospitalFullModel:
 			self.unhospitalized.count,
 			self.recovered.count,
 			self.dead.count)
-		print(f"{init}")
 		# Integrate the SIR equations over the time grid, t.
 		results = odeint(deriv_seirh, init, time_domain, args=(self,))
 		(d_susceptible, d_incubating, d_infectious, d_isolated, d_noncritical,

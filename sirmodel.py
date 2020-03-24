@@ -11,13 +11,10 @@ from constants import *
 
 def deriv_sir(y, t, model):
 	S_0, I_0, R_0 = y
-	print(f"{S_0}, {I_0}, {R_0} {model.gamma}")
 
 	infections = model.beta * S_0 * I_0 / model.population
 
 	recoveries = model.gamma * I_0
-
-	print(f"Returning:inf {infections}, rec {recoveries}")
 
 	dSdt = -infections
 	dIdt = infections - recoveries

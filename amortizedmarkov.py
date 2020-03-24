@@ -23,6 +23,25 @@ class SubgroupRates:
 		self.icu_deathrate = icd['fatality'] / self.h_crit
 		self.icu_recovery_rate = 1 - self.icu_deathrate
 
+class BedPool:
+	def __init__(self, name, size):
+		self.name = name
+		self.size = size
+		self.available = size
+
+	def request(self, count):
+		if count > self.available:
+			retval = self.available
+		else:
+			retval = count
+		self.available -= retval
+		return retval
+
+	def restock(self, count):
+		if count + self.available > self.size:
+			raise ValueError("Trying to restock bed pool {self.name} to {count} + {self.available} > {self.size} beds")
+		self.available += count
+
 
 class AgeGroup:
 	def __init__(self, subgroupstats, name=None):
@@ -68,7 +87,6 @@ class AgeGroup:
 		self.h_icu.pass_downstream()
 
 	def apply_pending(self):
-#		print(f"apply_pending {self.name} ")
 		self.isolated.apply_pending()
 		self.h_noncrit.apply_pending()
 		self.h_crit.apply_pending()
@@ -85,11 +103,12 @@ class ProbState:
 		self.exit_states = []
 		self.domain = [count]
 		self.pending = 0
-		self.capacity = None
+		self.bedpool = None
 		self.overflowstate = None
 
-	def set_capacity(self, capacity, overflowstate):
-		self.capacity = capacity
+
+	def set_capacity(self, bedpool, overflowstate):
+		self.bedpool = bedpool
 		self.overflowstate = overflowstate
 
 	def add_exit_state(self, probability, state):
@@ -101,8 +120,6 @@ class ProbState:
 			total += state.distribution
 		for state in self.exit_states:
 			state.probability = state.distribution / (total * self.period)
-			if self.name == 'incubating':
-				print(f"{state.probability} = {state.distribution} / ({total} * {self.period})")
 
 	def get_state_redist(self, count_in=None):
 		if count_in == None:
@@ -113,22 +130,23 @@ class ProbState:
 		return count_out
 
 	def pass_downstream(self):
-		# if self.name != None:
-		# 	print(f"pass_downstream {self.name}: {self.count} / {self.period}")
 		for state in self.exit_states:
 			self.pending -= state.pass_downstream(self.count)
 
 	def store_pending(self, value):
-		self.pending += value
-		if self.capacity != None and (self.count + self.pending) > self.capacity:
+		if self.bedpool != None and (self.count + self.pending) > self.capacity:
+			available = self.bedpool.request(value)
+			if available < value:
+				overflow = value - available
+				self.overflowstate.store_pending(overflow)
 			pass_along = (self.count + self.pending) > self.capacity
 			self.pending -= pass_along
 			self.overflowstate.store_pending(pass_along)
 
+		self.pending += value
+
 
 	def apply_pending(self):
-#		if self.name != None:
-#		print(f"Apply Pending {self.name} {len(self.domain)}")
 		self.count += self.pending
 		self.pending = 0
 		self.domain.append(self.count)

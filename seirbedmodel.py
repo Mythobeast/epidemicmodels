@@ -111,7 +111,6 @@ class SEIRHModel:
 				self.h_icu.count,
 				self.recovered.count,
 				self.dead.count)
-		print(f"{init}")
 		# Integrate the SIR equations over the time grid, t.
 		results = odeint(deriv_seirh, init, time_domain, args=(self,))
 		(d_susceptible, d_incubating, d_infectious, d_isolated, d_noncritical,
