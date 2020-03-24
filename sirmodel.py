@@ -76,14 +76,15 @@ def test_sir():
 	fig = plt.figure(facecolor='w')
 	# ax = fig.add_subplot(111, axis_bgcolor='#dddddd', axisbelow=True)
 	ax = fig.add_subplot(111, axisbelow=True)
-	ax.plot(time_domain, Su,  color=TABLEAU_BLUE, alpha=0.5, lw=2, label='Susceptible', linestyle='-')
-	ax.plot(time_domain, Iu, color=TABLEAU_RED, alpha=0.5, lw=2, label='Infected', linestyle='-')
-	ax.plot(time_domain, Ru, color=TABLEAU_GREEN, alpha=0.5, lw=2, label='Recovered', linestyle='-')
+	
+	ax.plot(time_domain, Su, color=TABLEAU_BLUE, alpha=0.5, lw=2,  label='Susceptible', linestyle='-')
+	ax.plot(time_domain, Iu, color=TABLEAU_RED,   alpha=0.5, lw=2, label='Infected',    linestyle='-')
+	ax.plot(time_domain, Ru, color=TABLEAU_GREEN, alpha=0.5, lw=2, label='Recovered',   linestyle='-')
 
 	ax.set_xlabel('Days')
-	ax.set_ylabel('Number')
+	ax.set_ylabel('Population')
 
-	chart_title = f"COVID-19 SIR Model | Denver | R0=2.65 | 6.8 Days per Generation"
+	chart_title = f"COVID-19 SIR Model | Denver | R0={BASE_R0} | 6.8 Days per Generation"
 	plt.title(chart_title, fontsize=14)
 	# ax.set_ylim(0,1.2)
 	ax.yaxis.set_tick_params(length=4)
