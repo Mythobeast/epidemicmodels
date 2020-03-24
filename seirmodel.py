@@ -102,8 +102,14 @@ def test_seir():
 	seirmodel.reset()
 
 	# for calculating the effects of social distancing over time
-	date_offsets = [30,   45,   53,   60,   68,  159]
-	r0_values  = [2.65, 2.45, 2.15, 1.65, 1.55, 2.65]
+
+	# social distancing 1 -- Day 35
+	date_offsets = [		 36,   				  37,   	  	   38,   			     40,  		        43,  		   159]
+	r0_values  = [BASE_R0 -.25, 		BASE_R0 -.5, 	  BASE_R0 -1, 			BASE_R0 -2, 	 BASE_R0 -2.5,	 BASE_R0 -2.5]
+
+	# social distancing 2 -- 45
+	# date_offsets = [	   45,   			47,   	  	     48,   			       50,  		  53,  			 159]
+	# r0_values  = [BASE_R0-.25, 		BASE_R0-.5, 	  BASE_R0-1, 			BASE_R0-2, 	 BASE_R0-2.5,	 BASE_R0-2.5]
 
 	seirmodel.run_r0_set(date_offsets, r0_values)
 
@@ -117,20 +123,20 @@ def test_seir():
 	fig = plt.figure(facecolor='w')
 	# ax = fig.add_subplot(111, axis_bgcolor='#dddddd', axisbelow=True)
 	ax = fig.add_subplot(111, axisbelow=True)
-	ax.plot(time_domain, Su,  color=TABLEAU_BLUE, alpha=0.5, lw=2, label='Susc, R0=2.65', linestyle='-')
-	ax.plot(time_domain, Eu,  color=TABLEAU_ORANGE, alpha=0.5, lw=2, label='Exp, R0=2.65', linestyle='-')
-	ax.plot(time_domain, Iu, color=TABLEAU_RED, alpha=0.5, lw=2, label='Inf, R0=2.65', linestyle='-')
-	ax.plot(time_domain, Ru, color=TABLEAU_GREEN, alpha=0.5, lw=2, label='Rec, R0=2.65', linestyle='-')
+	ax.plot(time_domain, Su,  color=TABLEAU_BLUE, alpha=0.5, lw=2, label=f"Susceptible, R0={BASE_R0}", linestyle='-')
+	ax.plot(time_domain, Eu,  color=TABLEAU_ORANGE, alpha=0.5, lw=2, label=f"Exposed, R0={BASE_R0}", linestyle='-')
+	ax.plot(time_domain, Iu, color=TABLEAU_RED, alpha=0.5, lw=2, label=f"Infected, R0={BASE_R0}", linestyle='-')
+	ax.plot(time_domain, Ru, color=TABLEAU_GREEN, alpha=0.5, lw=2, label=f"Recovered, R0={BASE_R0}", linestyle='-')
 
-	ax.plot(time_domain, Sc, color=TABLEAU_BLUE, alpha=0.5, lw=2, label='Susc, varied R0', linestyle='--')
-	ax.plot(time_domain, Ec,  color=TABLEAU_ORANGE, alpha=0.5, lw=2, label='Exp, varied R0', linestyle='--')
-	ax.plot(time_domain, Ic, color=TABLEAU_RED, alpha=0.5, lw=2, label='Inf, varied R0', linestyle='--')
-	ax.plot(time_domain, Rc, color=TABLEAU_GREEN, alpha=0.5, lw=2, label='Red, varied R0', linestyle='--')
+	ax.plot(time_domain, Sc, color=TABLEAU_BLUE, alpha=0.5, lw=2, label=f"Susceptible, Social Distancing", linestyle='--')
+	ax.plot(time_domain, Ec,  color=TABLEAU_ORANGE, alpha=0.5, lw=2, label=f"Exposed, Social Distancing", linestyle='--')
+	ax.plot(time_domain, Ic, color=TABLEAU_RED, alpha=0.5, lw=2, label=f"Infected, Social Distancing", linestyle='--')
+	ax.plot(time_domain, Rc, color=TABLEAU_GREEN, alpha=0.5, lw=2, label=f"Recovered, Social Distancing", linestyle='--')
 
 	ax.set_xlabel('Days')
-	ax.set_ylabel('Number')
+	ax.set_ylabel('Population')
 
-	chart_title = f"COVID-19 SEIR Model, Denver County\n R0=2.65 vs Social Distancing"
+	chart_title = f"COVID-19 SEIR Model, Denver County\n R0={BASE_R0} vs Social Distancing starting Day 35"
 	plt.title(chart_title, fontsize=14)
 	# ax.set_ylim(0,1.2)
 	ax.yaxis.set_tick_params(length=4)
