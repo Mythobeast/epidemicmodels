@@ -1,5 +1,6 @@
 
 {
+  "modelname": "Denver County",
   "totalpop": 737855,
   "incubation_period": 3.0,
   "prediagnosis_period": 3.8,

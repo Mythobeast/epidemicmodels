@@ -10,6 +10,7 @@ from scenario import EpiScenario
 class ScenarioDrivenModel:
 	def __init__(self, configfilename):
 		self.scenario = EpiScenario(configfilename)
+		self.modelname = self.scenario.modelname
 		self.total_days = 0
 		self.population = self.scenario.totalpop
 
@@ -101,7 +102,7 @@ class ScenarioDrivenModel:
 
 
 def main():
-	model = ScenarioDrivenModel('scenario2.json')
+	model = ScenarioDrivenModel('scenario1.json')
 
 	model.run()
 	model.gather_sums()
@@ -125,9 +126,9 @@ def main():
 	# ax = fig.add_subplot(111, axis_bgcolor='#dddddd', axisbelow=True)
 	ax = fig.add_subplot(111, axisbelow=True)
 #	ax.plot(time_domain, u_susc, color=(0, 0, 1), alpha=.5, lw=2, label='Susceptible', linestyle='-')
-	ax.plot(time_domain, u_incu, color=TABLEAU_ORANGE, alpha=0.1, lw=2, label='Exposed', linestyle='-')
-	ax.plot(time_domain, u_infe, color=TABLEAU_RED, alpha=0.5, lw=2, label='Infected', linestyle='-')
-	ax.plot(time_domain, u_isol, color=TAB_COLORS[8], alpha=.5, lw=2, label='Home Iso', linestyle='-')
+#	ax.plot(time_domain, u_incu, color=TABLEAU_ORANGE, alpha=0.1, lw=2, label='Exposed', linestyle='-')
+#	ax.plot(time_domain, u_infe, color=TABLEAU_RED, alpha=0.5, lw=2, label='Infected', linestyle='-')
+#	ax.plot(time_domain, u_isol, color=TAB_COLORS[8], alpha=.5, lw=2, label='Home Iso', linestyle='-')
 	ax.plot(time_domain, u_h_no, color=TAB_COLORS[10], alpha=.5, lw=2, label='Hosp Noncrit', linestyle=':')
 	ax.plot(time_domain, u_h_cr, color=TAB_COLORS[12], alpha=.5, lw=2, label='Hosp Crit', linestyle=':')
 	ax.plot(time_domain, u_h_ic, color=(1, 0, 0), alpha=.5, lw=2, label='ICU', linestyle=':')
@@ -141,7 +142,7 @@ def main():
 	ax.set_xlabel('Days')
 	ax.set_ylabel('Number')
 
-	chart_title = f"COVID-19 Hospitalization Projection\nDenver County | Variable R0"
+	chart_title = model.modelname
 	plt.title(chart_title, fontsize=14)
 	# ax.set_ylim(0,1.2)
 	ax.yaxis.set_tick_params(length=4)

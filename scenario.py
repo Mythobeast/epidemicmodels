@@ -7,6 +7,7 @@ class EpiScenario:
 	def __init__(self, configfile):
 		with open(configfile, 'r') as cf:
 			self.parameters = json.load(cf)
+		self.modelname = self.parameters['modelname']
 		self.totalpop = self.parameters['totalpop']
 		if 'maxdays' in self.parameters:
 			self.maxdays = self.parameters['maxdays']
@@ -32,7 +33,7 @@ class EpiScenario:
 		self.r0_values = self.parameters['R0_set']['r0_values']
 		self.age_distribution = self.parameters['age_distribution']
 		self.age_projection = self.parameters['age_projection']
-		print(f"Age projection: ageproj {self.age_projection[AGE8x]}")
+
 		self.subgrouprates = {
 			AGE0x: SubgroupRates(self.age_projection[AGE0x], self.age_distribution[AGE0x]),
 			AGE1x: SubgroupRates(self.age_projection[AGE1x], self.age_distribution[AGE1x]),
