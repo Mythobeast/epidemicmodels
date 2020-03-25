@@ -1,7 +1,11 @@
 
 import json
+from datetime import datetime
 
 from constants import *
+from amortizedmarkov import SubgroupRates
+
+DATEFORMAT = "%Y-%m-%d"
 
 class EpiScenario:
 	def __init__(self, configfile):
@@ -24,13 +28,33 @@ class EpiScenario:
 		else:
 			self.prediagnosis = 3.8
 
-
 		self.susceptible = self.parameters['initial_values']['susceptible']
 		self.infected = self.parameters['initial_values']['infected']
 		self.infectious = self.parameters['initial_values']['infectious']
 
-		self.r0_date_offsets = self.parameters['R0_set']['date_offsets']
-		self.r0_values = self.parameters['R0_set']['r0_values']
+		try:
+			self.initial_date = datetime.strptime(self.parameters['initial_date'], DATEFORMAT)
+		except ValueError as ve:
+			if 'does not match format' in ve.message:
+				print(f"Exception encountered while parsing initial date: {ve}")
+			raise ve
+
+		self.r0_date_offsets = []
+		self.r0_values = [self.parameters['initial_r0']]
+
+		try:
+			self.initial_date = datetime.strptime(self.parameters['initial_date'], DATEFORMAT)
+			for offset in self.parameters['r0_shifts']:
+				newdate = datetime.strptime(offset['date'], DATEFORMAT)
+				self.r0_date_offsets.append((newdate - self.initial_date).days)
+				self.r0_values.append(offset['r0'])
+
+		except ValueError as ve:
+			if 'does not match format' in ve.message:
+				print(f"Exception encountered while parsing r0 offsets: {ve}")
+			raise ve
+
+		self.r0_date_offsets.append(self.parameters['chart_period'])
 		self.age_distribution = self.parameters['age_distribution']
 		self.age_projection = self.parameters['age_projection']
 

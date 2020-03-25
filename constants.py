@@ -50,30 +50,17 @@ ICD = {
 	AGE8x: { 'hosp_rate': .273, 'crit_rate': .709, 'fatality': .093 }
 }
 
-# This class uses IC information to populate state-change percentages
-class SubgroupRates:
-	def __init__(self, icd, pop_dist):
-		self.pop_dist = pop_dist
-		self.isolate = 1 - icd['hosp_rate']
-		self.h_crit = icd['hosp_rate'] * icd['crit_rate']
-		self.h_noncrit = icd['hosp_rate'] - self.h_crit
-		self.icu_deathrate = icd['fatality'] / self.h_crit
-		self.icu_recovery_rate = 1 - self.icu_deathrate
-
-AGE_BASED_RATES = {
-	AGE0x: SubgroupRates(ICD[AGE0x], AGE_DISTRIBUTION[AGE0x]),
-	AGE1x: SubgroupRates(ICD[AGE1x], AGE_DISTRIBUTION[AGE1x]),
-	AGE2x: SubgroupRates(ICD[AGE2x], AGE_DISTRIBUTION[AGE2x]),
-	AGE3x: SubgroupRates(ICD[AGE3x], AGE_DISTRIBUTION[AGE3x]),
-	AGE4x: SubgroupRates(ICD[AGE4x], AGE_DISTRIBUTION[AGE4x]),
-	AGE5x: SubgroupRates(ICD[AGE5x], AGE_DISTRIBUTION[AGE5x]),
-	AGE6x: SubgroupRates(ICD[AGE6x], AGE_DISTRIBUTION[AGE6x]),
-	AGE7x: SubgroupRates(ICD[AGE7x], AGE_DISTRIBUTION[AGE7x]),
-	AGE8x: SubgroupRates(ICD[AGE8x], AGE_DISTRIBUTION[AGE8x])
-}
-
-
-
+# 53 ventilators
+#
+#
+# max 65
+#
+# icu 117
+# max_icu 139
+#
+# adult_floor  229
+#
+# non-covid load 100
 
 
 ## Make Pretty

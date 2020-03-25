@@ -1,13 +1,23 @@
 
 {
   "modelname": "Denver County",
-  "totalpop": 737855,
+  "totalpop": 370970,
   "incubation_period": 3.0,
   "prediagnosis_period": 3.8,
+  "chart_min": 80,
+  "chart_period": 200,
+  "initial_date": "2020-02-27",
+  "initial_r0": 3.8,
+  "r0_shifts":
+  [
+    {"date": "2020-03-05", "r0": 2.5},
+    {"date": "2020-03-10", "r0": 2.2},
+    {"date": "2020-03-24", "r0": 1.4}
+  ],
   "R0_set":
   {
-    "date_offsets": [30, 45, 53, 60, 68, 159],
-	"r0_values": [3.8, 3.6, 3.3, 2.8, 1.55, 3.8]
+    "date_offsets": [7, 14, 21, 28, 35, 159],
+	"r0_values": [1.0, 1.0, 1.0, 1.0, 1.0, 1]
   },
   "initial_values":
   {

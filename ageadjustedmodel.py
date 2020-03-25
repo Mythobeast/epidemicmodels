@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from amortizedmarkov import ProbState, AgeGroup
+from amortizedmarkov import ProbState, SubgroupRates
+from hospitalized_agegroup import AgeGroup
 from constants import *
 
 
@@ -25,8 +26,8 @@ class AgeAdjustedModel:
 		self.infectious.normalize_states_over_period()
 
 		self.subgroups = dict()
-		for key, value in AGE_BASED_RATES.items():
-			self.subgroups[key] = AgeGroup(value, name=key)
+		for key, value in AGE_DISTRIBUTION.items():
+			self.subgroups[key] = AgeGroup(SubgroupRates(ICD[key], value), name=key)
 
 		self.sum_isolated = None
 		self.sum_noncrit = None
@@ -37,11 +38,11 @@ class AgeAdjustedModel:
 
 	def gather_sums(self):
 #		print(f"base:{len(self.susceptible.domain)}")
-		self.sum_isolated = [0] * len(self.susceptible.domain)
-		self.sum_noncrit =  [0] * len(self.susceptible.domain)
-		self.sum_crit =  [0] * len(self.susceptible.domain)
-		self.sum_icu =  [0] * len(self.susceptible.domain)
-		self.sum_recovered =  [0] * len(self.susceptible.domain)
+		self.sum_isolated =  [0] * len(self.susceptible.domain)
+		self.sum_noncrit =   [0] * len(self.susceptible.domain)
+		self.sum_icu =       [0] * len(self.susceptible.domain)
+		self.sum_icu_vent =  [0] * len(self.susceptible.domain)
+		self.sum_recovered = [0] * len(self.susceptible.domain)
 		self.sum_deceased =  [0] * len(self.susceptible.domain)
 #		print(f"final isolated 0-9:{len(self.subgroups['0-9'].isolated.domain)} {self.subgroups['0-9'].isolated.pending}, {self.subgroups['0-9'].isolated.count}")
 
@@ -49,8 +50,8 @@ class AgeAdjustedModel:
 #			print(f"adding isolated {key}:  {self.sum_isolated} {value.isolated.domain}")
 			self.sum_isolated  = np.add(self.sum_isolated, value.isolated.domain)
 			self.sum_noncrit   = np.add(self.sum_noncrit, value.h_noncrit.domain)
-			self.sum_crit      = np.add(self.sum_crit, value.h_crit.domain)
 			self.sum_icu       = np.add(self.sum_icu, value.h_icu.domain)
+			self.sum_icu_vent  = np.add(self.sum_icu_vent, value.h_icu_vent.domain)
 			self.sum_recovered = np.add(self.sum_recovered, value.recovered.domain)
 			self.sum_deceased  = np.add(self.sum_deceased, value.deceased.domain)
 
@@ -63,8 +64,8 @@ class AgeAdjustedModel:
 		self.infectious.count = 1
 
 		self.subgroups = dict()
-		for key, value in AGE_BASED_RATES.items():
-			self.subgroups[key] = AgeGroup(value, name=key)
+		for key, value in AGE_DISTRIBUTION.items():
+			self.subgroups[key] = AgeGroup(SubgroupRates(ICD[key], value), name=key)
 
 	def set_r0(self, value):
 		self.r0 = value
@@ -117,9 +118,6 @@ class AgeAdjustedModel:
 		self.total_days += 1
 
 
-
-
-
 def main():
 	model = AgeAdjustedModel()
 
@@ -127,8 +125,14 @@ def main():
 	# ref: https://www.colorado.gov/pacific/cdphe/2019-novel-coronavirus
 	model.set_population(POP_DENVER)
 
-	date_offsets = [30, 45, 53, 60, 68, 159]
-	r0_values = [BASE_R0, BASE_R0 - .2, BASE_R0 - .5, BASE_R0 - 1, 1.55, BASE_R0]
+	BASE_R0 = 3.3
+	index = 0
+	sd_start = 29
+	# social distancing 1 -- Day 29
+	date_offsets = [29, 30, 31, 33, 36, 159]
+	r0_values = [3.05, 2.55, 2.3, 1.8, 1.3, 1.5]
+#	date_offsets = [30, 45, 53, 60, 68, 159]
+#	r0_values = [BASE_R0, BASE_R0 - .2, BASE_R0 - .5, BASE_R0 - 1, 1.55, BASE_R0]
 
 	model.run_r0_set(date_offsets, r0_values)
 	model.gather_sums()
@@ -138,15 +142,15 @@ def main():
 	u_infe = model.infectious.domain
 	u_isol = model.sum_isolated
 	u_h_no = model.sum_noncrit
-	u_h_cr = model.sum_crit
 	u_h_ic = model.sum_icu
+	u_h_ve = model.sum_icu_vent
 	u_reco = model.sum_recovered
 	u_dead = model.sum_deceased
 
 	time_domain = np.linspace(0, model.total_days, model.total_days + 1)
 	hospitalized = []
-	for itr in range(0, len(u_h_cr)):
-		hospitalized.append(u_h_no[itr] + u_h_cr[itr] + u_h_ic[itr])
+	for itr in range(0, len(u_h_ic)):
+		hospitalized.append(u_h_no[itr] + u_h_ic[itr] + u_h_ve[itr])
 
 	fig = plt.figure(facecolor='w')
 	# ax = fig.add_subplot(111, axis_bgcolor='#dddddd', axisbelow=True)
@@ -155,9 +159,9 @@ def main():
 #	ax.plot(time_domain, u_incu, color=TABLEAU_ORANGE, alpha=0.1, lw=2, label='Exposed', linestyle='-')
 #	ax.plot(time_domain, u_infe, color=TABLEAU_RED, alpha=0.5, lw=2, label='Infected', linestyle='-')
 #	ax.plot(time_domain, u_isol, color=TAB_COLORS[8], alpha=.5, lw=2, label='Home Iso', linestyle='-')
-	ax.plot(time_domain, u_h_no, color=TAB_COLORS[10], alpha=.5, lw=2, label='Hosp Noncrit', linestyle=':')
-	ax.plot(time_domain, u_h_cr, color=TAB_COLORS[12], alpha=.5, lw=2, label='Hosp Crit', linestyle=':')
-	ax.plot(time_domain, u_h_ic, color=(1, 0, 0), alpha=.5, lw=2, label='ICU', linestyle=':')
+	ax.plot(time_domain, u_h_no, color=TAB_COLORS[10], alpha=.5, lw=1, label='Hosp Noncrit', linestyle='--')
+	ax.plot(time_domain, u_h_ic, color=TAB_COLORS[12], alpha=.5, lw=2, label='Hosp Crit', linestyle='-')
+	ax.plot(time_domain, u_h_ve, color=(1, 0, 0), alpha=.5, lw=2, label='ICU', linestyle='-')
 	ax.plot(time_domain, hospitalized, color=(1, 0, 0), alpha=1, lw=2, label='Total Hospitalized', linestyle='-')
 #	ax.plot(time_domain, u_reco, color=(0, .5, 0), alpha=.5, lw=2, label='Recovered', linestyle='--')
 	ax.plot(time_domain, u_dead, color=(0, 0, 0), alpha=.5, lw=2, label='Dead', linestyle='--')
@@ -186,7 +190,7 @@ def main():
 	with open(f"{outfilename}.csv", 'w') as outfile:
 		for itr in range(0, len(u_susc)):
 			outfile.write(f"{u_susc[itr]:.6f}, {u_incu[itr]:.6f}, {u_infe[itr]:.6f}, {u_isol[itr]:.6f}"
-			              f", {u_h_no[itr]:.6f}, {u_h_cr[itr]:.6f}, {u_h_ic[itr]:.6f}, {u_reco[itr]:.6f}"
+			              f", {u_h_no[itr]:.6f}, {u_h_ic[itr]:.6f}, {u_h_ve[itr]:.6f}, {u_reco[itr]:.6f}"
 			              f", {u_dead[itr]:.6f}, {hospitalized[itr]:.6f}\n")
 
 	plt.savefig(f"{outfilename}.png", bbox_inches="tight")
