@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -100,7 +102,7 @@ class ScenarioDrivenModel:
 
 		self.total_days += 1
 
-
+ONEDAY = timedelta(1)
 
 def main():
 	model = ScenarioDrivenModel('scenario1.json')
@@ -118,10 +120,20 @@ def main():
 	u_reco = model.sum_recovered
 	u_dead = model.sum_deceased
 
-	time_domain = np.linspace(0, model.total_days, model.total_days + 1)
+
+
+	startdate = model.scenario.initial_date
+	time_domain = [startdate]
+	cursor = startdate
+	for _ in range(0, model.scenario.maxdays):
+		cursor += ONEDAY
+		time_domain.append(cursor)
+
+#	time_domain = np.linspace(0, model.total_days, model.total_days + 1)
 	hospitalized = []
 	for itr in range(0, len(u_h_no)):
 		hospitalized.append(u_h_no[itr] + u_h_ic[itr] + u_h_ve[itr])
+
 
 	fig = plt.figure(facecolor='w')
 	# ax = fig.add_subplot(111, axis_bgcolor='#dddddd', axisbelow=True)
@@ -139,6 +151,7 @@ def main():
 
 	ax.plot(time_domain, [511] * (model.total_days + 1), color=(0, 0, 1), alpha=1, lw=1, label='511 Beds', linestyle='-')
 	ax.plot(time_domain, [77] * (model.total_days + 1), color=(1, 0, 0), alpha=1, lw=1, label='77 ICU units', linestyle='-')
+	plt.axvline(x=datetime.today(), alpha=.5, lw=2, label='Today')
 
 	ax.set_xlabel('Days')
 	ax.set_ylabel('Number')

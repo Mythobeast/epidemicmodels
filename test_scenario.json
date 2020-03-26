@@ -1,0 +1,41 @@
+
+{
+  "modelname": "Denver County",
+  "totalpop": 737855,
+  "incubation_period": 3.0,
+  "prediagnosis_period": 3.8,
+  "R0_set":
+  {
+    "date_offsets": [159],
+	"r0_values": [ 3]
+  },
+  "initial_values":
+  {
+    "susceptible": 737855,
+    "infected": 0,
+    "infectious": 1
+  },
+  "age_distribution": {
+    "0-9": 0.1184998,
+    "10-19": 0.1310645,
+    "20-29": 0.1461177,
+    "30-39": 0.1456213,
+    "40-49": 0.1303838,
+    "50-59": 0.1266992,
+    "60-69": 0.1090715,
+    "70-79": 0.0612498,
+    "80+": 0.0312923
+  },
+  "age_projection":
+  {
+    "0-9":   { "hosp_rate": 0.1, "crit_rate": 1,  "fatality": 0.1 },
+    "10-19": { "hosp_rate": 0.1, "crit_rate": 1,  "fatality": 0.1 },
+    "20-29": { "hosp_rate": 0.1, "crit_rate": 1,  "fatality": 0.1 },
+    "30-39": { "hosp_rate": 0.2, "crit_rate": 1,  "fatality": 0.2 },
+    "40-49": { "hosp_rate": 0.3, "crit_rate": 1, "fatality": 0.3 },
+    "50-59": { "hosp_rate": 0.3, "crit_rate": 1, "fatality": 0.3 },
+    "60-69": { "hosp_rate": 0.6, "crit_rate": 1, "fatality": 0.6 },
+    "70-79": { "hosp_rate": 0.8, "crit_rate": 1, "fatality": 0.8 },
+    "80+":   { "hosp_rate": 0.9, "crit_rate": 1, "fatality": 0.9 }
+  }
+}
