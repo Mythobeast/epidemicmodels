@@ -40,10 +40,11 @@ class AgeGroup:
 
 	# Add N people to the list of infected
 	def apply_infections(self, infections):
-		self.isolated.store_pending(infections * self.stats.isolate)
-		self.h_noncrit.store_pending(infections * self.stats.h_noncrit)
-		self.h_icu.store_pending(infections * self.stats.h_icu)
-		self.h_icu_vent.store_pending(infections * self.stats.h_icu_vent)
+		inf_float = float(infections)
+		self.isolated.store_pending(inf_float * self.stats.isolate)
+		self.h_noncrit.store_pending(inf_float * self.stats.h_noncrit)
+		self.h_icu.store_pending(inf_float * self.stats.h_icu)
+		self.h_icu_vent.store_pending(inf_float * self.stats.h_icu_vent)
 
 	def calculate_redistributions(self):
 		self.isolated.pass_downstream()

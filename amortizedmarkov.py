@@ -33,7 +33,6 @@ class SubgroupRates:
 		self.h_icu         = self.h_icu_all * 0.25
 		self.h_icu_vent    = self.h_icu_all * 0.75
 		self.icu_deathrate = icd['fatality'] / self.h_icu_all
-		print(f"deathrate: {self.icu_deathrate}")
 		self.icu_recovery_rate = 1 - self.icu_deathrate
 
 class BedPool:

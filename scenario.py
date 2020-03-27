@@ -8,11 +8,17 @@ from amortizedmarkov import SubgroupRates
 DATEFORMAT = "%Y-%m-%d"
 
 class EpiScenario:
+
 	def __init__(self, configfile):
-		with open(configfile, 'r') as cf:
-			self.parameters = json.load(cf)
+		if isinstance(configfile, str):
+			with open(configfile, 'r') as cf:
+				self.parameters = json.load(cf)
+		elif isinstance(configfile, dict):
+			self.parameters = configfile.copy()
+
 		self.modelname = self.parameters['modelname']
 		self.totalpop = self.parameters['totalpop']
+
 		if 'maxdays' in self.parameters:
 			self.maxdays = self.parameters['maxdays']
 		else:
@@ -21,12 +27,12 @@ class EpiScenario:
 		if 'incubation_period' in self.parameters:
 			self.incubation_period = self.parameters['incubation_period']
 		else:
-			self.incubation_period = 3
+			self.incubation_period = 5
 
 		if 'prediagnosis_period' in self.parameters:
 			self.prediagnosis = self.parameters['prediagnosis_period']
 		else:
-			self.prediagnosis = 3.8
+			self.prediagnosis = 3.6
 
 		self.susceptible = self.parameters['initial_values']['susceptible']
 		self.infected = self.parameters['initial_values']['infected']

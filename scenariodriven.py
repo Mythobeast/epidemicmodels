@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+import json
+import math
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,8 +13,14 @@ from scenario import EpiScenario
 
 
 class ScenarioDrivenModel:
-	def __init__(self, configfilename):
-		self.scenario = EpiScenario(configfilename)
+	def __init__(self, scenario):
+		if isinstance(scenario, str):
+			self.scenario = EpiScenario(scenario)
+		elif isinstance(scenario, EpiScenario):
+			self.scenario = scenario
+
+		print(f"Scenario is {type(scenario)}")
+
 		self.modelname = self.scenario.modelname
 		self.total_days = 0
 		self.population = self.scenario.totalpop
@@ -39,6 +47,7 @@ class ScenarioDrivenModel:
 		self.sum_recovered = None
 		self.sum_deceased = None
 		self.stepcounter = 0
+		self.fitness = None
 
 	def run(self):
 		self.run_r0_set(self.scenario.r0_date_offsets, self.scenario.r0_values)
@@ -85,14 +94,13 @@ class ScenarioDrivenModel:
 
 		diagnosed = self.isolated_holding.pending
 		self.isolated_holding.pending = 0
-
+		subpop_out = []
 		for key, agegroup in self.subgroups.items():
 			subpop = diagnosed * agegroup.stats.pop_dist
-			if key == '80+':
-				print(f"Subpop = {subpop} of {diagnosed}")
+			subpop_out.append(subpop)
 			agegroup.apply_infections(subpop)
 			agegroup.calculate_redistributions()
-
+		print(f"subpop: {subpop_out}")
 		self.susceptible.apply_pending()
 		self.incubating.apply_pending()
 		self.infectious.apply_pending()
@@ -101,6 +109,37 @@ class ScenarioDrivenModel:
 			agegroup.apply_pending()
 
 		self.total_days += 1
+
+	def calculate_fit(self, ideal):
+		sum2 = 0
+		infections = self.infectious.domain
+		for itr in range(0, len(ideal)):
+			sum2 += (infections[itr] - ideal[itr])^2
+		self.fitness = math.sqrt(sum2)
+
+	def save_results(self, iteration):
+		result = dict()
+
+		result['iteration'] = iteration
+		result['fitness'] = self.fitness
+		result['init_date'] = self.scenario.initial_date
+		result['r0dates'] = self.scenario.r0_date_offsets
+		result['r0set'] = self.scenario.r0_values
+
+		result['modelname'] = self.modelname
+		result['total_days'] = self.total_days
+		result['totalpop'] = self.population
+		result['sum_isolated'] = self.sum_isolated
+		result['sum_noncrit'] = self.sum_noncrit
+		result['sum_crit'] = self.sum_crit
+		result['sum_icu'] = self.sum_icu
+		result['sum_recovered'] = self.sum_recovered
+		result['sum_deceased'] = self.sum_deceased
+
+		with open(f"best_fit{iteration}", "w") as bfi:
+			json.dump(result, bfi)
+
+
 
 ONEDAY = timedelta(1)
 
@@ -120,8 +159,6 @@ def main():
 	u_reco = model.sum_recovered
 	u_dead = model.sum_deceased
 
-
-
 	startdate = model.scenario.initial_date
 	time_domain = [startdate]
 	cursor = startdate
@@ -132,6 +169,7 @@ def main():
 #	time_domain = np.linspace(0, model.total_days, model.total_days + 1)
 	hospitalized = []
 	for itr in range(0, len(u_h_no)):
+		print(f"Hospit: {u_h_no[itr] + u_h_ic[itr] + u_h_ve[itr]}")
 		hospitalized.append(u_h_no[itr] + u_h_ic[itr] + u_h_ve[itr])
 
 
@@ -147,7 +185,7 @@ def main():
 	ax.plot(time_domain, u_h_ve, color=TABLEAU_RED, alpha=1, lw=2, label='ICU + Ventilator', linestyle='--')
 	ax.plot(time_domain, hospitalized, color=(1, 0, 0), alpha=.25, lw=2, label='Total Hospitalized', linestyle='-')
 #	ax.plot(time_domain, u_reco, color=(0, .5, 0), alpha=.5, lw=2, label='Recovered', linestyle='--')
-	ax.plot(time_domain, u_dead, color=(0, 0, 0), alpha=.5, lw=2, label='Dead', linestyle=':')
+#	ax.plot(time_domain, u_dead, color=(0, 0, 0), alpha=.5, lw=2, label='Dead', linestyle=':')
 
 	ax.plot(time_domain, [511] * (model.total_days + 1), color=(0, 0, 1), alpha=1, lw=1, label='511 Beds', linestyle='-')
 	ax.plot(time_domain, [77] * (model.total_days + 1), color=(1, 0, 0), alpha=1, lw=1, label='77 ICU units', linestyle='-')
