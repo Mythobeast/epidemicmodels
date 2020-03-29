@@ -7,13 +7,13 @@ from constants import *
 import csv
 from datetime import datetime, timedelta
 
-INPUT_FILENAME = "testsocial.csv"
+INPUT_FILENAME = "FORMAT_ONLY.csv"
+DATETIME_FORMAT = "%Y-%m-%d"
 
 # Like SEIR, but moves 15% of the "recovered" into the hospital for an average length hospital stay
 # https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology
 class ExternallyDrivenModel:
 	def __init__(self):
-		self.r0 = 2.65
 		self.total_days = 0
 		self.population = POP_DENVER
 
@@ -29,13 +29,22 @@ class ExternallyDrivenModel:
 		self.sum_deceased = None
 
 		self.daily_input = None
+		self.startdate = None
 
 	def load_daily_hospitalized(self, filename):
 		self.daily_input = []
+		self.startdate = None
 		with open(filename, newline='') as inf:
-			thereader = csv.reader(inf)
+			thereader = csv.DictReader(inf)
 			for row in thereader:
-				self.daily_input.append(row)
+				if self.startdate is None:
+					self.startdate = datetime.strptime(row['Date'],DATETIME_FORMAT)
+				self.daily_input.append(
+					[
+						row['0-9'],  row['10-19'],row['20-29'],row['30-39'],
+						row['40-49'],row['50-59'],row['60-69'],row['70-79'],row['80']
+					]
+				)
 
 	def gather_sums(self):
 #		print(f"base:{len(self.susceptible.domain)}")
@@ -74,23 +83,23 @@ class ExternallyDrivenModel:
 	def step_day(self):
 
 		todayset = self.daily_input.pop(0)
-		self.subgroups[AGE0x].apply_infections(todayset[1])
+		self.subgroups[AGE0x].apply_infections(todayset[0])
 		self.subgroups[AGE0x].calculate_redistributions()
-		self.subgroups[AGE1x].apply_infections(todayset[2])
+		self.subgroups[AGE1x].apply_infections(todayset[1])
 		self.subgroups[AGE1x].calculate_redistributions()
-		self.subgroups[AGE2x].apply_infections(todayset[3])
+		self.subgroups[AGE2x].apply_infections(todayset[2])
 		self.subgroups[AGE2x].calculate_redistributions()
-		self.subgroups[AGE3x].apply_infections(todayset[4])
+		self.subgroups[AGE3x].apply_infections(todayset[3])
 		self.subgroups[AGE3x].calculate_redistributions()
-		self.subgroups[AGE4x].apply_infections(todayset[5])
+		self.subgroups[AGE4x].apply_infections(todayset[4])
 		self.subgroups[AGE4x].calculate_redistributions()
-		self.subgroups[AGE5x].apply_infections(todayset[6])
+		self.subgroups[AGE5x].apply_infections(todayset[5])
 		self.subgroups[AGE5x].calculate_redistributions()
-		self.subgroups[AGE6x].apply_infections(todayset[7])
+		self.subgroups[AGE6x].apply_infections(todayset[6])
 		self.subgroups[AGE6x].calculate_redistributions()
-		self.subgroups[AGE7x].apply_infections(todayset[8])
+		self.subgroups[AGE7x].apply_infections(todayset[7])
 		self.subgroups[AGE7x].calculate_redistributions()
-		self.subgroups[AGE8x].apply_infections(todayset[9])
+		self.subgroups[AGE8x].apply_infections(todayset[8])
 		self.subgroups[AGE8x].calculate_redistributions()
 
 		for key, agegroup in self.subgroups.items():
@@ -119,9 +128,8 @@ def main():
 	u_reco = model.sum_recovered
 	u_dead = model.sum_deceased
 
-	startdate = datetime(2020, 2, 15)
-	time_domain = [startdate]
-	cursor = startdate
+	time_domain = [model.startdate]
+	cursor = model.startdate
 	for _ in range(1, len(u_isol)):
 		cursor += ONEDAY
 		time_domain.append(cursor)
