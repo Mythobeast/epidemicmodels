@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import odeint
 
-from epidemicmodel import EpidemicModel
-from constants import *
+from models.epidemicmodel import EpidemicModel
+from parts.constants import *
 
 # SIR Model
 # Loosely based on https://scipython.com/book/chapter-8-scipy/additional-examples/the-sir-epidemic-model/
 
-def deriv_sir(y, t, model):
+def deriv_sir(y, model):
 	S_0, I_0, R_0 = y
 
 	infections = model.beta * S_0 * I_0 / model.population
@@ -48,7 +48,7 @@ class SIRModel(EpidemicModel):
 		self.recovered = self.R_domain.pop()
 
 	def run_r0_set(self, date_offsets, beta_values):
-		self.susceptible = self.population - self.infected - self.recovered - self.exposed
+		self.susceptible = self.population - self.infected - self.recovered
 		self.beta = self.r0 / self.dayspergen
 
 		prev_date = 0

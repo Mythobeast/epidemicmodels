@@ -1,4 +1,5 @@
 
+from datetime import datetime
 
 BASE_R0 = 3.8
 
@@ -6,8 +7,35 @@ BASE_R0 = 3.8
 #dola denver est 2020 (july) 737855\
 POP_DENVER = 737855
 POP_DENVERMETRO = 2932415
+POP_COLORADO = 5696000
 POP_COLORADO_SPRINGS = 668000
 POP_WELD_COUNTY = 305274
+
+TIMINGS = {
+	'days home isolation': 14,
+	'days ed prefloor':     1,
+	'days ed preicu':       1,
+	'days noncrit':        10,
+	'days preicu':          4,
+	'days icu nonvent':     7,
+	'days icu vent':       10,
+	'days posticu':         4
+}
+
+
+COLORADO_ACTUAL = {
+	datetime(2020, 3, 18): {'hospitalized': 38, 'deaths': 2},
+	datetime(2020, 3, 19): {'hospitalized': 44, 'deaths': 4},
+	datetime(2020, 3, 20): {'hospitalized': 58, 'deaths': 5},
+	datetime(2020, 3, 21): {'hospitalized': 58, 'deaths': 6},
+	datetime(2020, 3, 22): {'hospitalized': 72, 'deaths': 7},
+	datetime(2020, 3, 23): {'hospitalized': 84, 'deaths': 11},
+	datetime(2020, 3, 24): {'hospitalized': 148, 'deaths': 19},
+	datetime(2020, 3, 25): {'hospitalized': 176, 'deaths': 24},
+	datetime(2020, 3, 26): {'hospitalized': 239, 'deaths': 31},
+	datetime(2020, 3, 27): {'hospitalized': 275, 'deaths': 44},
+	datetime(2020, 3, 28): {'hospitalized': 326, 'deaths': 47}
+}
 
 # Age group enumeration
 AGE0x = '0-9'

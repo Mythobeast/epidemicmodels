@@ -1,27 +1,30 @@
 
 {
-  "modelname": "Denver County",
+  "modelname": "DH Projection, pop 370970",
   "totalpop": 370970,
-  "incubation_period": 3.0,
-  "prediagnosis_period": 3.8,
+  "incubation_period": 5.0,
+  "prediagnosis_period": 3.6,
   "chart_min": 80,
-  "chart_period": 200,
-  "initial_date": "2020-02-27",
+  "chart_period": 160,
+  "initial_date": "2020-02-13",
   "initial_r0": 3.8,
   "r0_shifts":
   [
-    {"date": "2020-03-05", "r0": 2.5},
-    {"date": "2020-03-10", "r0": 2.2},
-    {"date": "2020-03-24", "r0": 1.4}
+    {"date": "2020-03-13", "r0": 2.8},
+    {"date": "2020-03-14", "r0": 2.55},
+	{"date": "2020-03-16", "r0": 2.05},
+    {"date": "2020-03-17", "r0": 1.55},
+    {"date": "2020-03-20", "r0": 1.35},
+	{"date": "2020-03-26", "r0": 1.2},
+    {"date": "2020-04-09", "r0": 1.2},
+	{"date": "2020-04-23", "r0": 1.0},
+	{"date": "2020-05-07", "r0": 1.2},
+	{"date": "2020-05-21", "r0": 1.0},
+	{"date": "2020-06-04", "r0": 1.2}
   ],
-  "R0_set":
-  {
-    "date_offsets": [7, 14, 21, 28, 35, 159],
-	"r0_values": [1.0, 1.0, 1.0, 1.0, 1.0, 1]
-  },
   "initial_values":
   {
-    "susceptible": 737854,
+    "susceptible": 370969,
     "infected": 0,
     "infectious": 1
   },

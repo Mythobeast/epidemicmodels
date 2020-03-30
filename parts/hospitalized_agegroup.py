@@ -1,4 +1,4 @@
-from amortizedmarkov import ProbState
+from parts.amortizedmarkov import ProbState
 
 
 class AgeGroup:
@@ -9,7 +9,7 @@ class AgeGroup:
 		# Variables to store state changes
 
 		# Probability states
-		if self.name != None:
+		if self.name is not None:
 			self.isolated = ProbState(14,  name=f"{self.name}: isolated")
 		else:
 			self.isolated = ProbState(14)

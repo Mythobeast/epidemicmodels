@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import odeint
 
-from epidemicmodel import EpidemicModel
-from constants import *
+from models.epidemicmodel import EpidemicModel
+from parts.constants import *
 
 # Adding exposed delay before infectious
 # https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology
@@ -18,6 +18,7 @@ class SEIRModel(EpidemicModel):
 		self.daystorecovery = 0
 		self.E_domain = []
 		self.alpha = 0.2
+		self.time_domain = None
 
 	def reset(self):
 		super().reset()
@@ -69,7 +70,7 @@ class SEIRModel(EpidemicModel):
 
 
 # The SEIR model differential equations.
-def deriv_seir(y, t, N, alpha, beta, gamma):
+def deriv_seir(y, N, alpha, beta, gamma):
 	S_0, E_0, I_0, R_0 = y
 	infections = beta * S_0 * I_0 / N
 	symptomatic = alpha * E_0

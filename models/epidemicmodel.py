@@ -1,5 +1,5 @@
 
-from constants import *
+from parts.constants import *
 
 class EpidemicModel:
 	#Initialized for COVID-19

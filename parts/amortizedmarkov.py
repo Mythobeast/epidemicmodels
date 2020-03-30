@@ -12,28 +12,18 @@ class ExitState:
 		portion = value * self.probability
 		self.target.store_pending(portion)
 		return portion
+#
+# # This class uses IC information to populate state-change percentages
+# class SubgroupRates:
+# 	def __init__(self, icd, pop_dist):
+# 		self.pop_dist = pop_dist
+# 		self.isolate = 1 - icd['hosp_rate']
+# 		self.h_crit = icd['hosp_rate'] * icd['crit_rate']
+# 		self.h_noncrit = icd['hosp_rate'] - self.h_crit
+# 		self.icu_deathrate = icd['fatality'] / self.h_crit
+# 		self.icu_recovery_rate = 1 - self.icu_deathrate
 
 # This class uses IC information to populate state-change percentages
-class SubgroupRates:
-	def __init__(self, icd, pop_dist):
-		self.pop_dist = pop_dist
-		self.isolate = 1 - icd['hosp_rate']
-		self.h_crit = icd['hosp_rate'] * icd['crit_rate']
-		self.h_noncrit = icd['hosp_rate'] - self.h_crit
-		self.icu_deathrate = icd['fatality'] / self.h_crit
-		self.icu_recovery_rate = 1 - self.icu_deathrate
-
-# This class uses IC information to populate state-change percentages
-class SubgroupRates:
-	def __init__(self, icd, pop_dist):
-		self.pop_dist = pop_dist
-		self.isolate = 1 - icd['hosp_rate']
-		self.h_icu_all     = icd['hosp_rate'] * icd['crit_rate']
-		self.h_noncrit     = icd['hosp_rate'] - self.h_icu_all
-		self.h_icu         = self.h_icu_all * 0.25
-		self.h_icu_vent    = self.h_icu_all * 0.75
-		self.icu_deathrate = icd['fatality'] / self.h_icu_all
-		self.icu_recovery_rate = 1 - self.icu_deathrate
 
 class BedPool:
 	def __init__(self, name, size):
@@ -66,6 +56,8 @@ class ProbState:
 		self.bedpool = None
 		self.overflowstate = None
 
+		self.capacity = None
+
 
 	def set_capacity(self, bedpool, overflowstate):
 		self.bedpool = bedpool
@@ -82,7 +74,7 @@ class ProbState:
 			state.probability = state.distribution / (total * self.period)
 
 	def get_state_redist(self, count_in=None):
-		if count_in == None:
+		if count_in is None:
 			count_in = self.count
 		count_out = []
 		for outstate in self.exit_states:
@@ -94,7 +86,7 @@ class ProbState:
 			self.pending -= state.pass_downstream(self.count)
 
 	def store_pending(self, value):
-		if self.bedpool != None and (self.count + self.pending) > self.capacity:
+		if self.bedpool is not None and (self.count + self.pending) > self.capacity:
 			available = self.bedpool.request(value)
 			if available < value:
 				overflow = value - available
