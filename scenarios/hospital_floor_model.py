@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
 import json
 import math
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
+
 
 from parts.amortizedmarkov import ProbState
 from parts.hosppaths_byage import PathsByAge
@@ -280,7 +282,11 @@ class HospFloorModel:
 ONEDAY = timedelta(1)
 
 def main():
-	model = HospFloorModel('../bestscenario.json')
+	if len(sys.argv) > 1:
+		scenariofile = sys.argv[1]
+	else:
+		scenariofile = '../bestscenario.json'
+	model = HospFloorModel(scenariofile)
 
 	model.run()
 	model.gather_sums()
