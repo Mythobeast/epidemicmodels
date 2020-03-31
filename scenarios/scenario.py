@@ -29,7 +29,7 @@ class EpiScenario:
 
 		self.modelname = self.parameters.get('modelname', 'Use modelname parameter of the scenario to fill the title')
 		self.totalpop = self.parameters['totalpop']
-		self.maxdays = self.parameters.get('maxdays', 160)
+		self.maxdays = self.parameters.get('chart_period', 160)
 		self.incubation_period = self.parameters.get('incubation_period', 4)
 		self.prediagnosis = self.parameters.get('prediagnosis_period', 3.6)
 
@@ -59,7 +59,7 @@ class EpiScenario:
 				print(f"Exception encountered while parsing r0 offsets: {ve}")
 			raise ve
 
-		self.r0_date_offsets.append(self.parameters['chart_period'])
+		self.r0_date_offsets.append(self.maxdays)
 		self.age_distribution = self.parameters['age_distribution']
 		self.age_projection = self.parameters['age_projection']
 
@@ -76,9 +76,9 @@ class EpiScenario:
 		}
 
 		# Output result variables
-		self.susceptible = None
-		self.incubating  = None
-		self.infectious  = None
+		self.out_susceptible = None
+		self.out_incubating  = None
+		self.out_infectious  = None
 		self.sum_isolated  = None
 		self.sum_ed        = None
 		self.sum_floor     = None
@@ -92,6 +92,7 @@ class EpiScenario:
 		self.sum_noncrit = None
 		self.sum_icu = None
 		self.sum_icu_vent = None
+		self.hospital_door_aggregator = None
 
 	def save_results(self, iteration):
 		result = dict()
@@ -100,10 +101,15 @@ class EpiScenario:
 		result['serial'] = self.serial
 		result['fitness'] = self.fitness
 		result['scenario'] = self.parameters
-		result['susceptible'] = self.susceptible
-		result['incubating'] = self.incubating
+		result['output'] = dict()
+		result['output']['susceptible'] = self.out_susceptible
+		result['output']['incubating'] = self.out_incubating
 
-		with open(f"best_fit{iteration}", "w") as bfi:
+		result['output']['infectious'] = self.out_infectious
+		result['output']['hospitalized'] = self.hospital_door_aggregator
+		result['output']['dead'] = list(self.sum_deceased)
+
+		with open(f"best_fit{iteration}.json", "w") as bfi:
 			json.dump(result, bfi)
 
 
@@ -112,9 +118,21 @@ class EpiScenario:
 		fitcount = (ideal['end'] - ideal['start']).days
 		final_offset = initial_offset + fitcount + 1
 
+		prev_r0 = 3.0
+		r0_r2 = 0
+		avg_r0 = 0
+		for current_r0 in self.r0_values:
+			r0_r2 += (prev_r0 - current_r0) ** 2
+			avg_r0 += current_r0
+			prev_r0 = current_r0
+
+		r2_hold = math.sqrt(r0_r2)
+		avg_r0 /= len(self.r0_values)
+
+
 		cursor = initial_offset
 		fitcur = 0
-		hosp = self.sum_hospitalized
+		hosp = self.hospital_door_aggregator
 		dead = self.sum_deceased
 		hosp_sum = 0
 		hosp_r2 = 0
@@ -133,7 +151,8 @@ class EpiScenario:
 		hosp_avg = hosp_sum / fitcount
 		dead_avg = dead_sum / fitcount
 
-		self.fitness = (hosp_hold / hosp_avg) + (dead_hold / dead_avg)
+#		print(f"({hosp_hold} / {hosp_avg}) + ({dead_hold} / {dead_avg}) + {r2_hold}")
+		self.fitness = (hosp_hold / hosp_avg) + (dead_hold / dead_avg) + r2_hold/3
 
 
 	def generate_png(self):
@@ -178,8 +197,8 @@ class EpiScenario:
 
 		# Write a CSV to this directory
 		with open(f"{outfilename}.csv", 'w') as outfile:
-			for itr in range(0, len(self.susceptible)):
-				outfile.write(f"{self.susceptible[itr]:.6f}, {self.incubating[itr]:.6f}, {self.infectious[itr]:.6f}, "
+			for itr in range(0, len(self.out_susceptible)):
+				outfile.write(f"{self.out_susceptible[itr]:.6f}, {self.out_incubating[itr]:.6f}, {self.out_infectious[itr]:.6f}, "
 						f"{self.sum_isolated[itr]:.6f}, {self.sum_noncrit[itr]:.6f}, {self.sum_icu[itr]:.6f}, "
 						f"{self.sum_icu_vent[itr]:.6f}, {self.sum_recovered[itr]:.6f}, {self.sum_deceased[itr]:.6f}, "
 						f"{self.sum_hospitalized[itr]:.6f}\n")

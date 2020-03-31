@@ -73,6 +73,7 @@ class HospFloorModel:
 		self.isolated_holding.pending = 0
 		subpop_out = []
 		for key, agegroup in self.subgroups.items():
+
 			subpop = diagnosed * agegroup.stats.pop_dist
 			subpop_out.append(subpop)
 			agegroup.apply_infections(subpop)
@@ -88,9 +89,9 @@ class HospFloorModel:
 
 
 	def gather_sums(self):
-		self.scenario.susceptible = self.susceptible.domain
-		self.scenario.incubating  = self.incubating.domain
-		self.scenario.infectious  = self.infectious.domain
+		self.scenario.out_susceptible = self.susceptible.domain
+		self.scenario.out_incubating  = self.incubating.domain
+		self.scenario.out_infectious  = self.infectious.domain
 
 
 		time_increments = len(self.susceptible.domain)
@@ -261,10 +262,10 @@ class HospFloorModel:
 
 		# Write a CSV to this directory
 		with open(f"{outfilename}.csv", 'w') as outfile:
-			for itr in range(0, len(self.scenario.susceptible)):
-				outfile.write(f"{self.scenario.susceptible[itr]:.6f}, "
-				              f"{self.scenario.incubating[itr]:.6f}, "
-						f"{self.scenario.infectious[itr]:.6f}, "
+			for itr in range(0, len(self.scenario.out_susceptible)):
+				outfile.write(f"{self.scenario.out_susceptible[itr]:.6f}, "
+				              f"{self.scenario.out_incubating[itr]:.6f}, "
+						f"{self.scenario.out_infectious[itr]:.6f}, "
 						      f"{self.scenario.sum_isolated[itr]:.6f}"
 						f", {self.scenario.sum_floor[itr]:.6f}, "
 						      f"{self.scenario.sum_icu[itr]:.6f}, "

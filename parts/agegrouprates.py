@@ -22,19 +22,3 @@ class SubgroupRates:
 		self.p_icu_nonvent  = 1 - self.p_icu_vent
 		self.p_icu_death    = icd['p_icu_death']
 		self.p_icu_recovery = 1 - self.p_icu_death
-
-
-		print(f" pop_dist = {self.pop_dist}\n"
-		f"self.p_selfisolate  = {self.p_selfisolate}\n"
-		f"self.p_ed_to_icu    = {self.p_ed_to_icu}\n"
-		f"self.p_ed_to_floor  = {self.p_ed_to_floor}\n"
-
-		f"self.p_nevercrit    = {self.p_nevercrit}\n"
-		f"self.p_floor_to_icu = {self.p_floor_to_icu}\n"
-
-		f"self.p_icu_vent     = {self.p_icu_vent}\n"
-		f"self.p_icu_nonvent  = {self.p_icu_nonvent}\n"
-		f"self.p_icu_death    = {self.p_icu_death}\n"
-		f"self.p_icu_recovery = {self.p_icu_recovery}\n")
-
-

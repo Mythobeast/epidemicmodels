@@ -34,7 +34,8 @@ COLORADO_ACTUAL = {
 	datetime(2020, 3, 25): {'hospitalized': 176, 'deaths': 24},
 	datetime(2020, 3, 26): {'hospitalized': 239, 'deaths': 31},
 	datetime(2020, 3, 27): {'hospitalized': 275, 'deaths': 44},
-	datetime(2020, 3, 28): {'hospitalized': 326, 'deaths': 47}
+	datetime(2020, 3, 28): {'hospitalized': 326, 'deaths': 47},
+	datetime(2020, 3, 29): {'hospitalized': 414, 'deaths': 51}
 }
 
 # Age group enumeration

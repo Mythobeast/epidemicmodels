@@ -39,17 +39,63 @@ class ScenarioDrivenModel:
 		for key, value in self.scenario.subgrouprates.items():
 			self.subgroups[key] = AgeGroup(value, name=key)
 
-		self.stepcounter = 0
 		self.fitness = None
 
 	def run(self):
 		self.run_r0_set(self.scenario.r0_date_offsets, self.scenario.r0_values)
 
+	def set_r0(self, value):
+		self.r0 = value
+
+	def recalculate(self):
+		self.beta = self.r0 / self.infectious.period
+
+	def run_r0_set(self, date_offsets, r0_values):
+		self.scenario.hospital_door_aggregator = []
+		day_counter = 0
+		for itr in range(0, len(date_offsets)):
+			self.set_r0(r0_values[itr])
+			self.recalculate()
+			while day_counter < date_offsets[itr]:
+				self.step_day()
+				day_counter += 1
+
+	def step_day(self):
+		new_infections = self.beta * self.susceptible.count * self.infectious.count / self.population
+		self.susceptible.store_pending(-new_infections)
+		self.incubating.store_pending(new_infections)
+		self.incubating.pass_downstream()
+		self.infectious.pass_downstream()
+
+		diagnosed = self.isolated_holding.pending
+		if len(self.scenario.hospital_door_aggregator) == 0:
+			diagnagg = diagnosed
+		else:
+			diagnagg = self.scenario.hospital_door_aggregator[-1] + diagnosed
+		self.scenario.hospital_door_aggregator.append(diagnagg)
+
+		self.isolated_holding.pending = 0
+		subpop_out = []
+		for key, agegroup in self.subgroups.items():
+			subpop = diagnosed * agegroup.stats.pop_dist
+			subpop_out.append(subpop)
+			agegroup.apply_infections(subpop)
+			agegroup.calculate_redistributions()
+		self.susceptible.apply_pending()
+		self.incubating.apply_pending()
+		self.infectious.apply_pending()
+
+		for key, agegroup in self.subgroups.items():
+			agegroup.apply_pending()
+
+		self.total_days += 1
+
+
 	def gather_sums(self):
 		time_increments = len(self.susceptible.domain)
-		self.scenario.susceptible = self.susceptible.domain
-		self.scenario.incubating = self.incubating.domain
-		self.scenario.infectious = self.infectious.domain
+		self.scenario.out_susceptible = self.susceptible.domain
+		self.scenario.out_incubating = self.incubating.domain
+		self.scenario.out_infectious = self.infectious.domain
 		self.scenario.sum_isolated  = [0] * time_increments
 		self.scenario.sum_noncrit   = [0] * time_increments
 		self.scenario.sum_icu       = [0] * time_increments
@@ -69,75 +115,6 @@ class ScenarioDrivenModel:
 			self.scenario.sum_hospitalized  = np.add(self.scenario.sum_hospitalized, value.h_noncrit.domain)
 			self.scenario.sum_hospitalized  = np.add(self.scenario.sum_hospitalized, value.h_icu.domain)
 			self.scenario.sum_hospitalized  = np.add(self.scenario.sum_hospitalized, value.h_icu_vent.domain)
-
-
-	def set_r0(self, value):
-		self.r0 = value
-
-	def recalculate(self):
-		self.beta = self.r0 / self.infectious.period
-
-	def run_r0_set(self, date_offsets, r0_values):
-		day_counter = 0
-		for itr in range(0, len(date_offsets)):
-			self.set_r0(r0_values[itr])
-			self.recalculate()
-			while day_counter < date_offsets[itr]:
-				self.step_day()
-				day_counter += 1
-
-	def step_day(self):
-		self.stepcounter += 1
-		new_infections = self.beta * self.susceptible.count * self.infectious.count / self.population
-		self.susceptible.store_pending(-new_infections)
-		self.incubating.store_pending(new_infections)
-		self.incubating.pass_downstream()
-		self.infectious.pass_downstream()
-
-		diagnosed = self.isolated_holding.pending
-		self.isolated_holding.pending = 0
-		subpop_out = []
-		for key, agegroup in self.subgroups.items():
-			subpop = diagnosed * agegroup.stats.pop_dist
-			subpop_out.append(subpop)
-			agegroup.apply_infections(subpop)
-			agegroup.calculate_redistributions()
-		self.susceptible.apply_pending()
-		self.incubating.apply_pending()
-		self.infectious.apply_pending()
-
-		for key, agegroup in self.subgroups.items():
-			agegroup.apply_pending()
-
-		self.total_days += 1
-
-	def calculate_fit(self, ideal):
-		initial_offset = (ideal['start'] - self.scenario.initial_date).days
-		fitcount = (ideal['end'] - ideal['start']).days
-		final_offset = initial_offset + fitcount + 1
-
-		cursor = initial_offset
-		fitcur = 0
-		hosp = self.scenario.sum_hospitalized
-		dead = self.scenario.sum_deceased
-		hosp_sum = 0
-		hosp_r2 = 0
-		dead_sum = 0
-		dead_r2 = 0
-		while cursor < final_offset:
-			hosp_sum += hosp[cursor]
-			dead_sum += hosp[cursor]
-			hosp_r2 += (hosp[cursor] - ideal['hospitalized'][fitcur]) ** 2
-			dead_r2 += (dead[cursor] - ideal['deceased'][fitcur]) ** 2
-			fitcur += 1
-			cursor += 1
-
-		hosp_hold = math.sqrt(hosp_r2)
-		dead_hold = math.sqrt(dead_r2)
-		hosp_avg = hosp_sum / fitcount
-		dead_avg = dead_sum / fitcount
-
-		self.scenario.fitness = (hosp_hold / hosp_avg) + (dead_hold / dead_avg)
 
 
 	def save_results(self, iteration):
@@ -181,9 +158,9 @@ class ScenarioDrivenModel:
 # 2709 S. Cook.  Denver, Co. 80210
 
 	def generate_png(self):
-		u_susc = self.susceptible.domain
-		u_incu = self.incubating.domain
-		u_infe = self.infectious.domain
+		u_susc = self.scenario.out_susceptible
+		u_incu = self.scenario.out_incubating
+		u_infe = self.scenario.out_infectious
 		u_isol = self.scenario.sum_isolated
 		u_h_no = self.scenario.sum_noncrit
 		u_h_ic = self.scenario.sum_icu
@@ -259,75 +236,11 @@ class ScenarioDrivenModel:
 ONEDAY = timedelta(1)
 
 def main():
-	model = ScenarioDrivenModel('sc_fit100.json')
+	model = ScenarioDrivenModel('ga_fit.json')
 
 	model.run()
 	model.gather_sums()
 
-# 	u_susc = model.susceptible.domain
-# 	u_incu = model.incubating.domain
-# 	u_infe = model.infectious.domain
-# 	u_isol = model.sum_isolated
-# 	u_h_no = model.sum_noncrit
-# 	u_h_ic = model.sum_icu
-# 	u_h_ve = model.sum_icu_vent
-# 	u_reco = model.sum_recovered
-# 	u_dead = model.sum_deceased
-#
-# 	startdate = model.scenario.initial_date
-# 	time_domain = [startdate]
-# 	cursor = startdate
-# 	for _ in range(0, model.scenario.maxdays):
-# 		cursor += ONEDAY
-# 		time_domain.append(cursor)
-#
-# #	time_domain = np.linspace(0, model.total_days, model.total_days + 1)
-# 	hospitalized = []
-# 	for itr in range(0, len(u_h_no)):
-# 		print(f"Hospit: {u_h_no[itr] + u_h_ic[itr] + u_h_ve[itr]}")
-# 		hospitalized.append(u_h_no[itr] + u_h_ic[itr] + u_h_ve[itr])
-#
-#
-# 	fig = plt.figure(facecolor='w')
-# 	# ax = fig.add_subplot(111, axis_bgcolor='#dddddd', axisbelow=True)
-# 	ax = fig.add_subplot(111, axisbelow=True)
-# #	ax.plot(time_domain, u_susc, color=(0, 0, 1), alpha=.5, lw=2, label='Susceptible', linestyle='-')
-# #	ax.plot(time_domain, u_incu, color=TABLEAU_ORANGE, alpha=0.1, lw=2, label='Exposed', linestyle='-')
-# #	ax.plot(time_domain, u_infe, color=TABLEAU_RED, alpha=0.5, lw=2, label='Infected', linestyle='-')
-# #	ax.plot(time_domain, u_isol, color=TAB_COLORS[8], alpha=.5, lw=2, label='Home Iso', linestyle='-')
-# 	ax.plot(time_domain, u_h_no, color=TABLEAU_BLUE, alpha=1, lw=2, label='Noncrit', linestyle='--')
-# 	ax.plot(time_domain, u_h_ic, color=TABLEAU_GREEN, alpha=1, lw=2, label='ICU', linestyle='--')
-# 	ax.plot(time_domain, u_h_ve, color=TABLEAU_RED, alpha=1, lw=2, label='ICU + Ventilator', linestyle='--')
-# 	ax.plot(time_domain, hospitalized, color=(1, 0, 0), alpha=.25, lw=2, label='Total Hospitalized', linestyle='-')
-# #	ax.plot(time_domain, u_reco, color=(0, .5, 0), alpha=.5, lw=2, label='Recovered', linestyle='--')
-# #	ax.plot(time_domain, u_dead, color=(0, 0, 0), alpha=.5, lw=2, label='Dead', linestyle=':')
-#
-# 	ax.plot(time_domain, [511] * (model.total_days + 1), color=(0, 0, 1), alpha=1, lw=1, label='511 Beds', linestyle='-')
-# 	ax.plot(time_domain, [77] * (model.total_days + 1), color=(1, 0, 0), alpha=1, lw=1, label='77 ICU units', linestyle='-')
-# 	plt.axvline(x=datetime.today(), alpha=.5, lw=2, label='Today')
-#
-# 	ax.set_xlabel('Days')
-# 	ax.set_ylabel('Number')
-#
-# 	# ax.set_ylim(0,1.2)
-# 	ax.yaxis.set_tick_params(length=4)
-# 	ax.xaxis.set_tick_params(length=4)
-# 	# ax.grid(b=True, which='minor', c='w', lw=1, ls='--')
-# 	ax.grid()
-# 	legend = ax.legend()
-# 	legend.get_frame().set_alpha(0.5)
-# 	for spine in ('top', 'right', 'bottom', 'left'):
-# 		ax.spines[spine].set_visible(False)
-#
-#
-# 	# Write a CSV to this directory
-# 	with open(f"{outfilename}.csv", 'w') as outfile:
-# 		for itr in range(0, len(u_susc)):
-# 			outfile.write(f"{u_susc[itr]:.6f}, {u_incu[itr]:.6f}, {u_infe[itr]:.6f}, {u_isol[itr]:.6f}"
-# 			              f", {u_h_no[itr]:.6f}, {u_h_ic[itr]:.6f}, {u_h_ve[itr]:.6f}, {u_reco[itr]:.6f}"
-# 			              f", {u_dead[itr]:.6f}, {hospitalized[itr]:.6f}\n")
-#
-# 	plt.savefig(f"{outfilename}.png", bbox_inches="tight")
 	thisplot = model.generate_png()
 	chart_title = model.modelname
 	outfilename = "_".join(chart_title.replace("|", " ").replace(":", " ").replace(".", " ").split())

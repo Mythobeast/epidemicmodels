@@ -26,12 +26,12 @@ class AgeGroup:
 		self.h_noncrit.add_exit_state(self.recovered, 1)
 		self.h_noncrit.normalize_states_over_period()
 
-		self.h_icu.add_exit_state(self.deceased,   self.stats.icu_deathrate)
-		self.h_icu.add_exit_state(self.h_post_icu, self.stats.icu_recovery_rate)
+		self.h_icu.add_exit_state(self.deceased,   self.stats.p_icu_death)
+		self.h_icu.add_exit_state(self.h_post_icu, self.stats.p_icu_recovery)
 		self.h_icu.normalize_states_over_period()
 
-		self.h_icu_vent.add_exit_state(self.deceased,   self.stats.icu_deathrate)
-		self.h_icu_vent.add_exit_state(self.h_post_icu, self.stats.icu_recovery_rate)
+		self.h_icu_vent.add_exit_state(self.deceased,   self.stats.p_icu_death)
+		self.h_icu_vent.add_exit_state(self.h_post_icu, self.stats.p_icu_recovery)
 		self.h_icu_vent.normalize_states_over_period()
 
 		self.h_post_icu.add_exit_state(self.recovered, 1)
@@ -41,10 +41,10 @@ class AgeGroup:
 	# Add N people to the list of infected
 	def apply_infections(self, infections):
 		inf_float = float(infections)
-		self.isolated.store_pending(inf_float * self.stats.isolate)
-		self.h_noncrit.store_pending(inf_float * self.stats.h_noncrit)
-		self.h_icu.store_pending(inf_float * self.stats.h_icu)
-		self.h_icu_vent.store_pending(inf_float * self.stats.h_icu_vent)
+		self.isolated.store_pending(inf_float * self.stats.p_selfisolate)
+		self.h_noncrit.store_pending(inf_float * self.stats.p_nevercrit)
+		self.h_icu.store_pending(inf_float * self.stats.p_icu_nonvent)
+		self.h_icu_vent.store_pending(inf_float * self.stats.p_icu_vent)
 
 	def calculate_redistributions(self):
 		self.isolated.pass_downstream()

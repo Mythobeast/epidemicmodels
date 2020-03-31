@@ -1,6 +1,8 @@
 from parts.amortizedmarkov import ProbState
 from parts.constants import TIMINGS
 
+import logging
+
 class PathsByAge:
 	def __init__(self, subgroupstats, name=None):
 
@@ -80,6 +82,7 @@ class PathsByAge:
 	# Add N people to the list of infected
 	def apply_infections(self, infections):
 		inf_float = float(infections)
+		print(f"Storing infections {self.name}:  {inf_float * self.stats.p_selfisolate}, {inf_float * self.stats.p_ed_to_floor}, {inf_float * self.stats.p_ed_to_icu}")
 		self.isolated.store_pending(inf_float * self.stats.p_selfisolate)
 		self.ed_to_floor.store_pending(inf_float * self.stats.p_ed_to_floor)
 		self.ed_to_icu.store_pending(inf_float * self.stats.p_ed_to_icu)
