@@ -155,7 +155,6 @@ class ScenarioDrivenModel:
 		act_hosp.append(None)
 		return act_hosp, act_death
 
-# 2709 S. Cook.  Denver, Co. 80210
 
 	def generate_png(self):
 		u_susc = self.scenario.out_susceptible

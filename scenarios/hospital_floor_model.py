@@ -109,14 +109,14 @@ class HospFloorModel:
 
 		for key, value in self.subgroups.items():
 			self.scenario.sum_isolated  = np.add(self.scenario.sum_isolated, value.isolated.domain)
-			self.scenario.sum_ed        = np.add(self.scenario.sum_ed, value.get_ed_counts())
+#			self.scenario.sum_ed        = np.add(self.scenario.sum_ed, value.get_ed_counts())
 			self.scenario.sum_floor     = np.add(self.scenario.sum_floor, value.get_floor_counts())
 			self.scenario.sum_icu       = np.add(self.scenario.sum_icu, value.get_icu_counts())
 			self.scenario.sum_vent      = np.add(self.scenario.sum_vent, value.icu_vent.domain)
 			self.scenario.sum_recovered = np.add(self.scenario.sum_recovered, value.recovered.domain)
 			self.scenario.sum_deceased  = np.add(self.scenario.sum_deceased, value.deceased.domain)
 
-		self.scenario.sum_hospitalized  = np.add(self.scenario.sum_hospitalized, self.scenario.sum_ed )
+#		self.scenario.sum_hospitalized  = np.add(self.scenario.sum_hospitalized, self.scenario.sum_ed )
 		self.scenario.sum_hospitalized  = np.add(self.scenario.sum_hospitalized, self.scenario.sum_floor)
 		self.scenario.sum_hospitalized  = np.add(self.scenario.sum_hospitalized, self.scenario.sum_icu)
 
@@ -203,11 +203,11 @@ class HospFloorModel:
 		ax = fig.add_subplot(111, axisbelow=True)
 
 	###   Lines for comparison to actual
-#		act_hosp, act_death = self.actual_curves()
+		act_hosp, act_death = self.actual_curves()
 	###   Actual Hospitalized, as specified in the constants
-#		ax.plot(time_domain, act_hosp, color=(0, 0, .5), alpha=1, lw=2, label='Actual Hospitalized', linestyle='-')
+		ax.plot(time_domain, act_hosp, color=(0, 0, .5), alpha=1, lw=2, label='Actual Hospitalized', linestyle='-')
 	###   Actual Deaths, as specified in the constants
-#		ax.plot(time_domain, act_death, color=(0, 0, .5), alpha=1, lw=2, label='Actual Deaths', linestyle='-')
+		ax.plot(time_domain, act_death, color=(0, 0, .5), alpha=1, lw=2, label='Actual Deaths', linestyle='-')
 
 	###   Susceptible line, usually too tall
 #   	ax.plot(time_domain, self.scenario.susceptible, color=(0, 0, 1), alpha=.5, lw=2, label='Susceptible', linestyle='-')

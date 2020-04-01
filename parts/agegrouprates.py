@@ -11,11 +11,16 @@ class SubgroupRates:
 		self.pop_dist = pop_dist
 		self.p_selfisolate  = 1 - icd['p_hospitalized']
 
-		self.p_ed_to_icu    = icd['p_hospitalized'] * icd['p_urgent_icu']
-		admitted_to_floor = 1 - icd['p_urgent_icu']
-		self.p_ed_to_floor  = icd['p_hospitalized'] * admitted_to_floor
+		self.p_nevercrit          =  icd['p_hospitalized'] * icd['p_noncrit']
+		straight_to_icu = icd['p_hospitalized'] * icd['p_hospitalized']
+		self.p_pre_icu            =  icd['p_hospitalized'] - (straight_to_icu + self.p_nevercrit)
+		self.p_urgent_icu_vent    =  straight_to_icu * icd['p_icu_vent']
+		self.p_urgent_icu_novent  =  straight_to_icu - self.p_urgent_icu_vent
 
-		self.p_nevercrit    = icd['p_noncrit'] / admitted_to_floor
+
+#		self.p_ed_to_icu    = icd['p_hospitalized'] * icd['p_urgent_icu']
+#		self.p_ed_to_floor  = icd['p_hospitalized'] * admitted_to_floor
+
 		self.p_floor_to_icu = 1 - self.p_nevercrit
 
 		self.p_icu_vent     = icd['p_icu_vent']

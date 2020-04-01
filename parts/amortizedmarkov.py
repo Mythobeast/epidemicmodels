@@ -48,11 +48,11 @@ class BedPool:
 class ProbState:
 	def __init__(self, period, count=0, name=None):
 		self.name = name
-		self.period = period
-		self.count = count
+		self.period = float(period)
+		self.count = float(count)
 		self.exit_states = []
 		self.domain = [count]
-		self.pending = 0
+		self.pending = 0.0
 		self.bedpool = None
 		self.overflowstate = None
 
