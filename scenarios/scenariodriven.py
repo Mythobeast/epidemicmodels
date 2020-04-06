@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import json
 import math
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,8 +9,11 @@ import numpy as np
 from parts.amortizedmarkov import ProbState
 from parts.hospitalized_agegroup import AgeGroup
 from parts.constants import *
+from models.basic_math import calc_beta, calc_infected
 
 from scenarios.scenario import EpiScenario
+from scenarios.fitset import COLORADO_ACTUAL
+
 
 class ScenarioDrivenModel:
 	def __init__(self, scenario):
@@ -39,7 +43,7 @@ class ScenarioDrivenModel:
 		for key, value in self.scenario.subgrouprates.items():
 			self.subgroups[key] = AgeGroup(value, name=key)
 
-		self.fitness = None
+#		self.fitness = None
 
 	def run(self):
 		self.run_r0_set(self.scenario.r0_date_offsets, self.scenario.r0_values)
@@ -47,21 +51,20 @@ class ScenarioDrivenModel:
 	def set_r0(self, value):
 		self.r0 = value
 
-	def recalculate(self):
-		self.beta = self.r0 / self.infectious.period
-
 	def run_r0_set(self, date_offsets, r0_values):
 		self.scenario.hospital_door_aggregator = []
 		day_counter = 0
 		for itr in range(0, len(date_offsets)):
 			self.set_r0(r0_values[itr])
-			self.recalculate()
+			self.beta = calc_beta(r0_values[itr], self.infectious.period)
 			while day_counter < date_offsets[itr]:
 				self.step_day()
 				day_counter += 1
+		self.scenario.hospital_door_aggregator.append(self.scenario.hospital_door_aggregator[-1])
 
 	def step_day(self):
-		new_infections = self.beta * self.susceptible.count * self.infectious.count / self.population
+		new_infections = calc_infected(self.population, self.beta, self.susceptible.count, self.infectious.count)
+		#print(f"Day {self.total_days} infections: {new_infections} = {self.beta} * {self.susceptible.count} * {self.infectious.count} / {self.population}")
 		self.susceptible.store_pending(-new_infections)
 		self.incubating.store_pending(new_infections)
 		self.incubating.pass_downstream()
@@ -112,16 +115,29 @@ class ScenarioDrivenModel:
 			self.scenario.sum_recovered = np.add(self.scenario.sum_recovered, value.recovered.domain)
 			self.scenario.sum_deceased  = np.add(self.scenario.sum_deceased, value.deceased.domain)
 
-			self.scenario.sum_hospitalized  = np.add(self.scenario.sum_hospitalized, value.h_noncrit.domain)
-			self.scenario.sum_hospitalized  = np.add(self.scenario.sum_hospitalized, value.h_icu.domain)
-			self.scenario.sum_hospitalized  = np.add(self.scenario.sum_hospitalized, value.h_icu_vent.domain)
+		self.scenario.sum_hospitalized  = np.add(self.scenario.sum_hospitalized, self.scenario.sum_icu)
+		self.scenario.sum_hospitalized  = np.add(self.scenario.sum_hospitalized, self.scenario.sum_noncrit)
+		self.scenario.sum_hospitalized  = np.add(self.scenario.sum_hospitalized, self.scenario.sum_icu_vent)
+
+		self.scenario.fitset = dict()
+		cursor = self.scenario.initial_date
+		stoptime = cursor + timedelta(self.total_days)
+		itr = 0
+		while cursor < stoptime:
+			if cursor not in self.scenario.fitset:
+				self.scenario.fitset[cursor] = dict()
+			self.scenario.fitset[cursor]['current_hosp'] = self.scenario.sum_hospitalized[itr]
+			self.scenario.fitset[cursor]['total_hosp'] = self.scenario.hospital_door_aggregator[itr]
+			self.scenario.fitset[cursor]['total_deceased'] = self.scenario.sum_deceased[itr]
+			itr += 1
+			cursor += ONEDAY
 
 
 	def save_results(self, iteration):
 		result = dict()
 
 		result['iteration'] = iteration
-		result['fitness'] = self.fitness
+		result['fitness'] = self.scenario.fitness
 		result['scenario'] = self.scenario.parameters
 
 		result['modelname'] = self.modelname
@@ -139,14 +155,14 @@ class ScenarioDrivenModel:
 
 	def actual_curves(self):
 		cursor = self.scenario.initial_date
-		finaldate = cursor + timedelta(self.scenario.maxdays)
+		finaldate = cursor + timedelta(self.total_days)
 		act_hosp = []
 		act_death = []
 
 		while cursor < finaldate:
 			if cursor in COLORADO_ACTUAL:
 				act_hosp.append(COLORADO_ACTUAL[cursor]['hospitalized'])
-				act_death.append(COLORADO_ACTUAL[cursor]['deaths'])
+				act_death.append(COLORADO_ACTUAL[cursor]['deceased'])
 			else:
 				act_hosp.append(None)
 				act_death.append(None)
@@ -155,53 +171,59 @@ class ScenarioDrivenModel:
 		act_hosp.append(None)
 		return act_hosp, act_death
 
-
 	def generate_png(self):
-		u_susc = self.scenario.out_susceptible
-		u_incu = self.scenario.out_incubating
-		u_infe = self.scenario.out_infectious
-		u_isol = self.scenario.sum_isolated
-		u_h_no = self.scenario.sum_noncrit
-		u_h_ic = self.scenario.sum_icu
-		u_h_ve = self.scenario.sum_icu_vent
-		u_reco = self.scenario.sum_recovered
-		u_dead = self.scenario.sum_deceased
+
+		hospitalized = self.scenario.sum_hospitalized
 
 		startdate = self.scenario.initial_date
 		time_domain = [startdate]
 		cursor = startdate
-		for _ in range(0, self.scenario.maxdays):
+		for _ in range(0, self.total_days):
 			cursor += ONEDAY
 			time_domain.append(cursor)
 
 	#	time_domain = np.linspace(0, model.total_days, model.total_days + 1)
-		hospitalized = []
-		for itr in range(0, len(u_h_no)):
-			hospitalized.append(u_h_no[itr] + u_h_ic[itr] + u_h_ve[itr])
-
 
 		fig = plt.figure(facecolor='w')
 		# ax = fig.add_subplot(111, axis_bgcolor='#dddddd', axisbelow=True)
 		ax = fig.add_subplot(111, axisbelow=True)
 
+	###   Lines for comparison to actual
 		act_hosp, act_death = self.actual_curves()
+	###   Actual Hospitalized, as specified in the constants
 		ax.plot(time_domain, act_hosp, color=(0, 0, .5), alpha=1, lw=2, label='Actual Hospitalized', linestyle='-')
+	###   Actual Deaths, as specified in the constants
 		ax.plot(time_domain, act_death, color=(0, 0, .5), alpha=1, lw=2, label='Actual Deaths', linestyle='-')
 
-#   	ax.plot(time_domain, u_susc, color=(0, 0, 1), alpha=.5, lw=2, label='Susceptible', linestyle='-')
-#   	ax.plot(time_domain, u_incu, color=TABLEAU_ORANGE, alpha=0.1, lw=2, label='Exposed', linestyle='-')
-#   	ax.plot(time_domain, u_infe, color=TABLEAU_RED, alpha=0.5, lw=2, label='Infected', linestyle='-')
-#   	ax.plot(time_domain, u_isol, color=TAB_COLORS[8], alpha=.5, lw=2, label='Home Iso', linestyle='-')
-#		ax.plot(time_domain, u_h_no, color=TABLEAU_BLUE, alpha=1, lw=2, label='Noncrit', linestyle='--')
-#		ax.plot(time_domain, u_h_ic, color=TABLEAU_GREEN, alpha=1, lw=2, label='ICU', linestyle='--')
-#		ax.plot(time_domain, u_h_ve, color=TABLEAU_RED, alpha=1, lw=2, label='ICU + Ventilator', linestyle='--')
+	###   Susceptible line, usually too tall
+#		ax.plot(time_domain, self.scenario.out_susceptible, color=(0, 0, 1), alpha=.5, lw=2, label='Susceptible', linestyle='-')
+	###   Recovered/immune, usually too tall
+#   	ax.plot(time_domain, self.scenario.sum_recovered, color=(0, .5, 0), alpha=.5, lw=2, label='Recovered', linestyle='--')
+
+	###   Infected patients who aren't infectious yet
+#   	ax.plot(time_domain, self.scenario.incubating, color=TABLEAU_ORANGE, alpha=0.1, lw=2, label='Exposed', linestyle='-')
+	###   Infectious patients who don't know they have it
+#   	ax.plot(time_domain, self.scenario.infectious, color=TABLEAU_RED, alpha=0.5, lw=2, label='Infected', linestyle='-')
+	###   Known and unknown infected, isolated at home
+#   	ax.plot(time_domain, self.scenario.sum_isolated, color=TAB_COLORS[8], alpha=.5, lw=2, label='Home Iso', linestyle='-')
+
+	###   Hospital floor patients
+#		ax.plot(time_domain, self.scenario.sum_floor, color=TABLEAU_BLUE, alpha=1, lw=2, label='Noncrit', linestyle='--')
+	###   Non-ventilated ICU patients
+		ax.plot(time_domain, self.scenario.sum_icu, color=TABLEAU_GREEN, alpha=1, lw=2, label='ICU', linestyle='--')
+	###   Ventilated ICU patients
+#		ax.plot(time_domain, self.scenario.sum_vent, color=TABLEAU_RED, alpha=1, lw=2, label='ICU + Ventilator', linestyle='--')
+	###   Total hospitalized in all areas
 		ax.plot(time_domain, hospitalized, color=(1, 0, 0), alpha=.25, lw=2, label='Total Hospitalized', linestyle='-')
-#   	ax.plot(time_domain, u_reco, color=(0, .5, 0), alpha=.5, lw=2, label='Recovered', linestyle='--')
-		ax.plot(time_domain, u_dead, color=(0, 0, 0), alpha=.5, lw=2, label='Dead', linestyle=':')
+	###   Deceased
+#		ax.plot(time_domain, self.scenario.sum_deceased, color=(.25, .25, 0), alpha=.5, lw=2, label='Recovered', linestyle='--')
 
-#		ax.plot(time_domain, [229] * (self.total_days + 1), color=(0, 0, 1), alpha=1, lw=1, label='511 Beds', linestyle='-')
-#		ax.plot(time_domain, [86] * (self.total_days + 1), color=(1, 0, 0), alpha=1, lw=1, label='77 ICU units', linestyle='-')
+	###   Max non-icu capacity
+#		ax.plot(time_domain, [229] * (self.total_days + 1), color=(0, 0, 1), alpha=1, lw=1, label='229 Floor beds', linestyle='-')
+	###   Max ICU capacity
+#		ax.plot(time_domain, [86] * (self.total_days + 1), color=(1, 0, 0), alpha=1, lw=1, label='86 ICU units', linestyle='-')
 
+	### Vertical line indicating today
 		plt.axvline(x=datetime.today(), alpha=.5, lw=2, label='Today')
 
 		ax.set_xlabel('Days')
@@ -219,27 +241,39 @@ class ScenarioDrivenModel:
 		for spine in ('top', 'right', 'bottom', 'left'):
 			ax.spines[spine].set_visible(False)
 
-		outfilename = "_".join(chart_title.replace("|", " ").replace(":", " ").replace(".", " ").split())
-
-		# Write a CSV to this directory
-		with open(f"{outfilename}.csv", 'w') as outfile:
-			for itr in range(0, len(u_susc)):
-				outfile.write(f"{u_susc[itr]:.6f}, {u_incu[itr]:.6f}, {u_infe[itr]:.6f}, {u_isol[itr]:.6f}"
-						f", {u_h_no[itr]:.6f}, {u_h_ic[itr]:.6f}, {u_h_ve[itr]:.6f}, {u_reco[itr]:.6f}"
-						f", {u_dead[itr]:.6f}, {hospitalized[itr]:.6f}\n")
-
 		return plt
 
+	def generate_csv(self):
 
+		chart_title = self.modelname
+		outfilename = "_".join(chart_title.replace("|", " ").replace(":", " ").replace(".", " ").split())
+		# Write a CSV to this directory
+		with open(f"{outfilename}.csv", 'w') as outfile:
+			for itr in range(0, len(self.scenario.out_susceptible)):
+				outfile.write(f"{self.scenario.out_susceptible[itr]:.6f}, "
+							f"{self.scenario.out_incubating[itr]:.6f}, "
+							f"{self.scenario.out_infectious[itr]:.6f}, "
+							f"{self.scenario.sum_isolated[itr]:.6f}, "
+							f"{self.scenario.sum_noncrit[itr]:.6f}, "
+							f"{self.scenario.sum_icu[itr]:.6f}, "
+							f"{self.scenario.sum_icu_vent[itr]:.6f}, "
+							f"{self.scenario.sum_recovered[itr]:.6f}, "
+							f"{self.scenario.sum_deceased[itr]:.6f}, "
+							f"{self.scenario.sum_hospitalized[itr]:.6f}\n")
 
 ONEDAY = timedelta(1)
 
 def main():
-	model = ScenarioDrivenModel('ga_fit.json')
+	if len(sys.argv) > 1:
+		scenariofile = sys.argv[1]
+	else:
+		scenariofile = 'ga_fit.json'
+	model = ScenarioDrivenModel(scenariofile)
 
 	model.run()
 	model.gather_sums()
 
+	model.generate_csv()
 	thisplot = model.generate_png()
 	chart_title = model.modelname
 	outfilename = "_".join(chart_title.replace("|", " ").replace(":", " ").replace(".", " ").split())

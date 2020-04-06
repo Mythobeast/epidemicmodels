@@ -13,6 +13,7 @@ ONEDAY = timedelta(1)
 
 SERIAL = 1
 
+
 class EpiScenario:
 
 	def __init__(self, configfile):
@@ -93,6 +94,8 @@ class EpiScenario:
 		self.sum_icu = None
 		self.sum_icu_vent = None
 		self.hospital_door_aggregator = None
+		self.fitset = None
+
 
 	def save_results(self, iteration):
 		result = dict()
@@ -114,10 +117,8 @@ class EpiScenario:
 
 
 	def calculate_fit(self, ideal):
-		initial_offset = (ideal['start'] - self.initial_date).days
-		fitcount = (ideal['end'] - ideal['start']).days
-		final_offset = initial_offset + fitcount + 1
 
+		### Prefer models where R1 doesn't vary wildly
 		prev_r0 = 3.0
 		r0_r2 = 0
 		avg_r0 = 0
@@ -130,29 +131,46 @@ class EpiScenario:
 		avg_r0 /= len(self.r0_values)
 
 
-		cursor = initial_offset
-		fitcur = 0
-		hosp = self.hospital_door_aggregator
-		dead = self.sum_deceased
-		hosp_sum = 0
+#		print(f"while {cursor} < {final_offset}, {ideal['start']}, {ideal['end']}")
+
+		### For fitting "currently hospitalized"
+#		hosp = self.sum_hospitalized
+		# for key, value in ideal.items():
+		# 	midhosp = self.fit_hosp[key] / value['hospitalized']
+		# 	if midhosp < 1:
+		# 		midhosp = 1/midhosp
+		# 	hosp_sum += midhosp
+
+
+		### For fitting Colorado actual
 		hosp_r2 = 0
-		dead_sum = 0
+		hosp_avg = 0
 		dead_r2 = 0
-		while cursor < final_offset:
-			hosp_sum += hosp[cursor]
-			dead_sum += hosp[cursor]
-			hosp_r2 += (hosp[cursor] - ideal['hospitalized'][fitcur]) ** 2
-			dead_r2 += (dead[cursor] - ideal['deceased'][fitcur]) ** 2
-			fitcur += 1
-			cursor += 1
+		dead_avg = 0
+		fitcount = 0
+
+		for key, value in ideal.items():
+			if key not in self.fitset:
+				raise ValueError(f"{key} not found in {self.fitset}")
+			fitcount += 1
+#			print(f"comparing {self.fitset[key]['total_hosp']} to {value['hospitalized']}")
+			hosp_off = self.fitset[key]['total_hosp'] - value['hospitalized']
+			hosp_avg += value['hospitalized']
+#			if hosp_off < 0:
+#				hosp_off = -hosp_off
+			hosp_r2 += hosp_off ** 2
+
+			death_off = self.fitset[key]['total_deceased'] - value['deceased']
+#			if death_off < 0:
+#				death_off = -death_off
+			dead_r2 += death_off ** 2
+			dead_avg += value['hospitalized']
 
 		hosp_hold = math.sqrt(hosp_r2)
 		dead_hold = math.sqrt(dead_r2)
-		hosp_avg = hosp_sum / fitcount
-		dead_avg = dead_sum / fitcount
+#		print(f"hosp_hold = {hosp_hold}, dead_hold = {dead_hold}")
 
-#		print(f"({hosp_hold} / {hosp_avg}) + ({dead_hold} / {dead_avg}) + {r2_hold}")
-		self.fitness = (hosp_hold / hosp_avg) + (dead_hold / dead_avg) + r2_hold/3
+		self.fitness =  hosp_hold + dead_hold + r2_hold/3
 
 
 	def generate_png(self):

@@ -115,3 +115,4 @@ class ProbState:
 	def adjust(self, value):
 		self.count += value
 		self.domain.append(self.count)
+

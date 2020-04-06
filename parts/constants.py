@@ -39,6 +39,7 @@ COLORADO_ACTUAL = {
 	datetime(2020, 3, 30): {'hospitalized': 509, 'deaths': 69},
 }
 
+
 # Age group enumeration
 AGE0x = '0-9'
 AGE1x = '10-19'

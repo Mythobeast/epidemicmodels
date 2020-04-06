@@ -4,6 +4,7 @@ from scipy.integrate import odeint
 
 from parts.amortizedmarkov import ProbState
 from parts.constants import *
+from models.basic_math import calc_beta
 
 # The SEIR model differential equations.
 def deriv_seirh(y, _, model):
@@ -94,7 +95,7 @@ class SEIRHModel:
 		self.population = value
 
 	def recalculate(self):
-		self.beta = self.r0 / self.infectious.period
+		self.beta = calc_beta(self.r0, self.dayspergen)
 
 	def run_period(self, days):
 		time_domain = np.linspace(0, days, days + 1)
@@ -130,7 +131,7 @@ class SEIRHModel:
 		prev_date = 0
 		for itr in range(0, len(date_offsets)):
 			self.set_r0(r0_values[itr])
-			self.recalculate()
+			self.beta = calc_beta(self.r0, self.dayspergen)
 			span = date_offsets[itr] - prev_date + 1
 			self.run_period(span)
 			prev_date = date_offsets[itr]

@@ -1,45 +1,60 @@
 
+import json
 import math
 import random
 from datetime import datetime, timedelta
 from operator import attrgetter
-from scenario import EpiScenario
-from scenariodriven import ScenarioDrivenModel
+from scenarios.scenario import EpiScenario
+from scenarios.scenariodriven import ScenarioDrivenModel
 
-FIT_START = datetime(2020, 3, 18)
-FIT_END = datetime(2020, 3, 27)
-HOSP_FIT = [38, 44, 58, 58, 72, 84, 148, 176, 239, 274]
-DEAD_FIT = [2, 4, 5, 6, 7, 11, 19, 24, 31, 44]
+from scenarios.fitset import COLORADO_ACTUAL
 
-RUNCOUNT = 1000
+RUNCOUNT = 1001
+DATEFORMAT = "%Y-%m-%d"
+MINDATE = datetime(2020, 2, 14)
+MAXDATE = datetime(2020, 3, 3)
 
 def random_r0():
 	return random.random() * 5.0
 
 def random_start_date():
-	date_offset = int(math.floor(random.random() * 40))
-	base_date = datetime(2020, 2, 14)
-	return base_date + timedelta(date_offset)
+	datebredth = (MAXDATE - MINDATE).days
+	date_offset = int(math.floor(random.random() * datebredth))
+	return MINDATE + timedelta(date_offset)
 
 def create_random_scenario():
-	retval = EpiScenario('scenario1.json')
-	random_r0s = []
-	for r0item in retval.r0_values:
-		random_r0s.append(random_r0())
-	retval.r0_values = random_r0s
-	retval.initial_date = random_start_date()
-	return retval
+	with open('gaseed.json') as fp:
+		newparms = json.load(fp)
+#	newparms['initial_r0'] = random_r0()
+	for shift in newparms['r0_shifts']:
+		shift['r0'] = random_r0()
+	newparms['initial_date'] = random_start_date().strftime(DATEFORMAT)
+	return EpiScenario(newparms)
 
 def mutate_scenario(scenario):
-	retval = EpiScenario(scenario.parameters)
-	for itr in range(0, len(scenario.r0_values)):
-		this_r0 = retval.r0_values[itr]
-		adjust_max = this_r0 / 10
+	newparms = json.loads(json.dumps(scenario.parameters))
+
+	this_r0 = newparms['initial_r0']
+	adjust_max = this_r0 / 5
+	adjustment = (random.random() * adjust_max) - (adjust_max/2)
+	newparms['initial_r0'] += adjustment
+	for shift in newparms['r0_shifts']:
+		this_r0 = shift['r0']
+		adjust_max = this_r0 / 5
 		adjustment = (random.random() * adjust_max) - (adjust_max/2)
-		retval.r0_values[itr] += adjustment
+		shift['r0'] += adjustment
+	current_init_dt = datetime.strptime(newparms['initial_date'], DATEFORMAT)
 	adjustment = int((random.random() * 6) - 3)
-	retval.initial_date += timedelta(adjustment)
-	return retval
+	newparms['initial_date'] = (current_init_dt + timedelta(adjustment)).strftime(DATEFORMAT)
+	return EpiScenario(newparms)
+
+def run_scenario(scenario):
+	model = ScenarioDrivenModel(scenario)
+	model.run()
+	model.gather_sums()
+	model.scenario.calculate_fit(ideal)
+	fitlist.append(model.scenario.fitness)
+
 
 
 def main():
@@ -49,31 +64,35 @@ def main():
 	for itr in range(0, 100):
 		scenarios.append(create_random_scenario())
 
-	ideal = dict()
-	ideal['start'] = FIT_START
-	ideal['end'] = FIT_END
-	ideal['hospitalized'] = HOSP_FIT
-	ideal['deceased'] = DEAD_FIT
+	ideal = COLORADO_ACTUAL
 
 	print(f"Scenario {scenarios[0]}")
-	for itr in range(0, RUNCOUNT):
-		print(f"Running itr {itr}")
+	for iteration_counter in range(0, RUNCOUNT):
+		print(f"Running itr {iteration_counter}")
+		fitlist = []
 		for scen in scenarios:
 			model = ScenarioDrivenModel(scen)
 			model.run()
 			model.gather_sums()
-			model.calculate_fit(ideal)
+			model.scenario.calculate_fit(ideal)
+			fitlist.append(model.scenario.fitness)
+		print(f"fitlist: {fitlist}")
 
+#		print(f"First few = {scenarios[0].serial}:{scenarios[0].fitness},{scenarios[1].serial}:{scenarios[1].fitness},{scenarios[2].serial}:{scenarios[2].fitness}")
 		scenarios = sorted(scenarios, key=attrgetter('fitness'))
-		if itr % 100 == 0:
-			scenarios[0].save_results(itr)
-		new_scenarios = []
-		for itr in range(0, 9):
-			this_scen = scenarios[itr]
-			new_scenarios.append(this_scen)
+#		print(f"reordered few = {scenarios[0].serial}:{scenarios[0].fitness},{scenarios[1].serial}:{scenarios[1].fitness},{scenarios[2].serial}:{scenarios[2].fitness}")
+		if iteration_counter % 100 == 0:
+			for itr2 in range(0, 10):
+				scenarios[itr2].save_results(iteration_counter + itr2)
+		new_scenarios = scenarios[:9]
+		for itr2 in range(0, 10):
+			this_scen = new_scenarios[itr2]
 			# Add nine motations for each best
-			for subitr in range(0, 9):
-				new_scenarios.append(mutate_scenario(this_scen))
+			for _ in range(0, 10):
+				new_scenarios.append(mutate_scenario(new_scenarios[0]))
+		for itr2 in range(0, 10):
+			new_scenarios.append(create_random_scenario())
+		print(f"scen 50: {new_scenarios[50].initial_date} {new_scenarios[50].r0_values}")
 		scenarios = new_scenarios
 
 

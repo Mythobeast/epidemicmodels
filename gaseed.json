@@ -1,0 +1,100 @@
+{
+"modelname": "Colorado",
+  "totalpop": 5694302,
+  "incubation_period": 3.0,
+  "prediagnosis_period": 3.8,
+  "chart_min": 80,
+  "chart_period": 100,
+  "initial_date": "2020-01-27",
+  "initial_r0": 3.0,
+  "r0_shifts":
+  [
+    {"date": "2020-03-13", "r0": 2.8},
+    {"date": "2020-03-20", "r0": 1.55},
+    {"date": "2020-03-24", "r0": 1.55},
+    {"date": "2020-03-27", "r0": 1.35},
+    {"date": "2020-03-30", "r0": 1.55},
+    {"date": "2020-04-03", "r0": 1.35}
+  ],
+  "initial_values": {
+    "susceptible": 5695999,
+    "infected": 0,
+    "infectious": 1
+  },
+  "age_distribution": {
+    "0-9": 0.1184998,
+    "10-19": 0.1310645,
+    "20-29": 0.1461177,
+    "30-39": 0.1456213,
+    "40-49": 0.1303838,
+    "50-59": 0.1266992,
+    "60-69": 0.1090715,
+    "70-79": 0.0612498,
+    "80+": 0.0312923
+  },
+  "age_projection": {
+    "0-9": {
+      "p_hospitalized": 0.001,
+      "p_noncrit": 0.95,
+      "p_urgent_icu": 0.05,
+      "p_icu_vent": 0.75,
+      "p_icu_death": 0.5
+    },
+    "10-19": {
+      "p_hospitalized": 0.003,
+      "p_noncrit": 0.95,
+      "p_urgent_icu": 0.05,
+      "p_icu_vent": 0.75,
+      "p_icu_death": 0.5
+    },
+    "20-29": {
+      "p_hospitalized": 0.012,
+      "p_noncrit": 0.95,
+      "p_urgent_icu": 0.05,
+      "p_icu_vent": 0.75,
+      "p_icu_death": 0.5
+    },
+    "30-39": {
+      "p_hospitalized": 0.032,
+      "p_noncrit": 0.95,
+      "p_urgent_icu": 0.05,
+      "p_icu_vent": 0.75,
+      "p_icu_death": 0.5
+    },
+    "40-49": {
+      "p_hospitalized": 0.049,
+      "p_noncrit": 0.937,
+      "p_urgent_icu": 0.063,
+      "p_icu_vent": 0.75,
+      "p_icu_death": 0.5
+    },
+    "50-59": {
+      "p_hospitalized": 0.102,
+      "p_noncrit": 0.818,
+      "p_urgent_icu": 0.122,
+      "p_icu_vent": 0.75,
+      "p_icu_death": 0.5
+    },
+    "60-69": {
+      "p_hospitalized": 0.166,
+      "p_noncrit": 0.726,
+      "p_urgent_icu": 0.274,
+      "p_icu_vent": 0.75,
+      "p_icu_death": 0.5
+    },
+    "70-79": {
+      "p_hospitalized": 0.243,
+      "p_noncrit": 0.568,
+      "p_urgent_icu": 0.432,
+      "p_icu_vent": 0.75,
+      "p_icu_death": 0.5
+    },
+    "80+": {
+      "p_hospitalized": 0.273,
+      "p_noncrit": 0.211,
+      "p_urgent_icu": 0.709,
+      "p_icu_vent": 0.75,
+      "p_icu_death": 0.5
+    }
+  }
+}

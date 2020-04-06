@@ -7,11 +7,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+from models.basic_math import calc_beta
 from parts.amortizedmarkov import ProbState
 from parts.hosppaths_byage import PathsByAge
 from parts.constants import *
 
 from scenarios.scenario import EpiScenario
+from scenarios.fitset import FITNESS_SET
 
 class HospFloorModel:
 	def __init__(self, scenario):
@@ -41,31 +43,28 @@ class HospFloorModel:
 		for key, value in self.scenario.subgrouprates.items():
 			self.subgroups[key] = PathsByAge(value, name=key)
 
-		self.stepcounter = 0
 		self.fitness = None
 
 	def run(self):
 		self.run_r0_set(self.scenario.r0_date_offsets, self.scenario.r0_values)
 
-
 	def set_r0(self, value):
 		self.r0 = value
-
-	def recalculate(self):
-		self.beta = self.r0 / self.infectious.period
 
 	def run_r0_set(self, date_offsets, r0_values):
 		day_counter = 0
 		for itr in range(0, len(date_offsets)):
 			self.set_r0(r0_values[itr])
-			self.recalculate()
+			self.beta = calc_beta(self.r0, self.dayspergen)
+			print(f"{self.beta} = {calc_beta(self.r0, self.dayspergen)})")
 			while day_counter < date_offsets[itr]:
 				self.step_day()
 				day_counter += 1
 
 	def step_day(self):
-		self.stepcounter += 1
 		new_infections = self.beta * self.susceptible.count * self.infectious.count / self.population
+#		print(f"Day {self.total_days} infections: {new_infections} = {self.beta} * {self.susceptible.count} * {self.infectious.count} / {self.population}")
+
 		self.susceptible.store_pending(-new_infections)
 		self.incubating.store_pending(new_infections)
 		self.incubating.pass_downstream()
@@ -75,7 +74,6 @@ class HospFloorModel:
 		self.isolated_holding.pending = 0
 		subpop_out = []
 		for key, agegroup in self.subgroups.items():
-
 			subpop = diagnosed * agegroup.stats.pop_dist
 			subpop_out.append(subpop)
 			agegroup.apply_infections(subpop)
@@ -98,7 +96,6 @@ class HospFloorModel:
 
 		time_increments = len(self.susceptible.domain)
 		self.scenario.sum_isolated  = [0] * time_increments
-		self.scenario.sum_ed        = [0] * time_increments
 		self.scenario.sum_floor     = [0] * time_increments
 		self.scenario.sum_icu       = [0] * time_increments
 		self.scenario.sum_vent      = [0] * time_increments
@@ -109,14 +106,12 @@ class HospFloorModel:
 
 		for key, value in self.subgroups.items():
 			self.scenario.sum_isolated  = np.add(self.scenario.sum_isolated, value.isolated.domain)
-#			self.scenario.sum_ed        = np.add(self.scenario.sum_ed, value.get_ed_counts())
 			self.scenario.sum_floor     = np.add(self.scenario.sum_floor, value.get_floor_counts())
 			self.scenario.sum_icu       = np.add(self.scenario.sum_icu, value.get_icu_counts())
 			self.scenario.sum_vent      = np.add(self.scenario.sum_vent, value.icu_vent.domain)
 			self.scenario.sum_recovered = np.add(self.scenario.sum_recovered, value.recovered.domain)
 			self.scenario.sum_deceased  = np.add(self.scenario.sum_deceased, value.deceased.domain)
 
-#		self.scenario.sum_hospitalized  = np.add(self.scenario.sum_hospitalized, self.scenario.sum_ed )
 		self.scenario.sum_hospitalized  = np.add(self.scenario.sum_hospitalized, self.scenario.sum_floor)
 		self.scenario.sum_hospitalized  = np.add(self.scenario.sum_hospitalized, self.scenario.sum_icu)
 
@@ -192,7 +187,7 @@ class HospFloorModel:
 		startdate = self.scenario.initial_date
 		time_domain = [startdate]
 		cursor = startdate
-		for _ in range(0, self.scenario.maxdays):
+		for _ in range(0, self.total_days):
 			cursor += ONEDAY
 			time_domain.append(cursor)
 
@@ -266,15 +261,15 @@ class HospFloorModel:
 		with open(f"{outfilename}.csv", 'w') as outfile:
 			for itr in range(0, len(self.scenario.out_susceptible)):
 				outfile.write(f"{self.scenario.out_susceptible[itr]:.6f}, "
-				              f"{self.scenario.out_incubating[itr]:.6f}, "
-						f"{self.scenario.out_infectious[itr]:.6f}, "
-						      f"{self.scenario.sum_isolated[itr]:.6f}"
-						f", {self.scenario.sum_floor[itr]:.6f}, "
-						      f"{self.scenario.sum_icu[itr]:.6f}, "
-						f"{self.scenario.sum_vent[itr]:.6f}, "
-						      f"{self.scenario.sum_recovered[itr]:.6f}"
-						f", {self.scenario.sum_deceased[itr]:.6f}, "
-						      f"{self.scenario.sum_hospitalized[itr]:.6f}\n")
+							f"{self.scenario.out_incubating[itr]:.6f}, "
+							f"{self.scenario.out_infectious[itr]:.6f}, "
+							f"{self.scenario.sum_isolated[itr]:.6f}, "
+							f"{self.scenario.sum_floor[itr]:.6f}, "
+							f"{self.scenario.sum_icu[itr]:.6f}, "
+							f"{self.scenario.sum_vent[itr]:.6f}, "
+							f"{self.scenario.sum_recovered[itr]:.6f}, "
+							f"{self.scenario.sum_deceased[itr]:.6f}, "
+							f"{self.scenario.sum_hospitalized[itr]:.6f}\n")
 
 
 
@@ -286,6 +281,7 @@ def main():
 		scenariofile = sys.argv[1]
 	else:
 		scenariofile = '../bestscenario.json'
+#		scenariofile = '../ga_fit.json'
 	model = HospFloorModel(scenariofile)
 
 	model.run()

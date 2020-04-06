@@ -1,5 +1,6 @@
 
 from parts.constants import *
+from models.basic_math import calc_beta
 
 class EpidemicModel:
 	#Initialized for COVID-19
@@ -13,7 +14,7 @@ class EpidemicModel:
 		self.recovered = 0
 
 		# Infections caused while infected
-		self.beta = self.r0 / self.dayspergen
+		self.beta = calc_beta(self.r0, self.dayspergen)
 		# Recoveries of infected per day
 		self.gamma = 1.0 / self.dayspergen
 		self.total_days = 0

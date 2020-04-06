@@ -4,6 +4,7 @@ from scipy.integrate import odeint
 
 from parts.amortizedmarkov import ProbState
 from parts.constants import *
+from models.basic_math import calc_beta
 
 
 MAX_HOSPITAL_LOAD = 20000
@@ -169,9 +170,6 @@ class HospitalFullModel:
 	def set_population(self, value):
 		self.population = value
 
-	def recalculate(self):
-		self.beta = self.r0 / self.infectious.period
-
 	def run_period(self, days):
 		time_domain = np.linspace(0, days, days + 1)
 		# Initial conditions vector
@@ -215,6 +213,8 @@ class HospitalFullModel:
 		prev_date = 0
 		for itr in range(0, len(date_offsets)):
 			self.set_r0(r0_values[itr])
+			self.beta = calc_beta(self.r0, self.dayspergen)
+
 			self.recalculate()
 			span = date_offsets[itr] - prev_date + 1
 			self.run_period2(span)

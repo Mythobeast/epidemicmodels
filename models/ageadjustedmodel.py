@@ -5,6 +5,7 @@ from parts.amortizedmarkov import ProbState
 from parts.agegrouprates import SubgroupRates
 from parts.hospitalized_agegroup import AgeGroup
 from parts.constants import *
+from models.basic_math import calc_beta
 
 
 # Like SEIR, but moves 15% of the "recovered" into the hospital for an average length hospital stay
@@ -75,9 +76,6 @@ class AgeAdjustedModel:
 	def set_population(self, value):
 		self.population = value
 
-	def recalculate(self):
-		self.beta = self.r0 / self.infectious.period
-
 	def run_period(self, days):
 		# Integrate the SIR equations over the time grid, t.
 		for _ in range(0, days):
@@ -89,7 +87,7 @@ class AgeAdjustedModel:
 		day_counter = 0
 		for itr in range(0, len(date_offsets)):
 			self.set_r0(r0_values[itr])
-			self.recalculate()
+			self.beta = calc_beta(self.r0, self.dayspergen)
 			while day_counter < date_offsets[itr]:
 				self.step_day()
 				day_counter += 1

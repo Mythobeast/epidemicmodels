@@ -13,9 +13,6 @@ class PathsByAge:
 		# Probability states
 		self.isolated    = ProbState(TIMINGS['days home isolation'],  name=f"{self.name}: isolated")
 
-#		self.ed_to_floor = ProbState(TIMINGS['days ed prefloor'],  name=f"{self.name}: ed_to_floor")
-#		self.ed_to_icu   = ProbState(TIMINGS['days ed preicu'],  name=f"{self.name}: ed_to_icu")
-
 		self.nevercrit   = ProbState(TIMINGS['days noncrit'],  name=f"{self.name}: nevercrit")
 		self.pre_icu     = ProbState(TIMINGS['days preicu'],  name=f"{self.name}: pre_icu")
 		self.icu_novent  = ProbState(TIMINGS['days icu nonvent'], name=f"{self.name}: icu")
@@ -28,20 +25,12 @@ class PathsByAge:
 		self.isolated.add_exit_state(self.recovered, 1)
 		self.isolated.normalize_states_over_period()
 
-#		self.ed_to_floor.add_exit_state(self.nevercrit, self.stats.p_nevercrit)
-#		self.ed_to_floor.add_exit_state(self.pre_icu, self.stats.p_floor_to_icu)
-#		self.ed_to_floor.normalize_states_over_period()
-
 		self.nevercrit.add_exit_state(self.recovered, 1)
 		self.nevercrit.normalize_states_over_period()
 
 		self.pre_icu.add_exit_state(self.icu_novent, self.stats.p_icu_nonvent)
 		self.pre_icu.add_exit_state(self.icu_vent, self.stats.p_icu_vent)
 		self.pre_icu.normalize_states_over_period()
-
-#		self.ed_to_icu.add_exit_state(self.icu, self.stats.p_icu_nonvent)
-#		self.ed_to_icu.add_exit_state(self.icu_vent, self.stats.p_icu_vent)
-#		self.ed_to_icu.normalize_states_over_period()
 
 		self.icu_novent.add_exit_state(self.deceased, self.stats.p_icu_death)
 		self.icu_novent.add_exit_state(self.post_icu, self.stats.p_icu_recovery)
@@ -54,13 +43,6 @@ class PathsByAge:
 		self.post_icu.add_exit_state(self.recovered, 1)
 		self.post_icu.normalize_states_over_period()
 
-	# def get_ed_counts(self):
-	# 	retval = []
-	# 	for itr in range(0, len(self.ed_to_floor.domain)):
-	# 		val = self.ed_to_floor.domain[itr] + self.ed_to_icu.domain[itr]
-	# 		retval.append(val)
-	# 	return retval
-
 
 	def get_floor_counts(self):
 		retval = []
@@ -68,6 +50,7 @@ class PathsByAge:
 			val = self.nevercrit.domain[itr] + self.pre_icu.domain[itr] + self.post_icu.domain[itr]
 			retval.append(val)
 		return retval
+
 
 	def get_icu_counts(self):
 		retval = []
@@ -80,12 +63,19 @@ class PathsByAge:
 	# Add N people to the list of infected
 	def apply_infections(self, infections):
 		inf_float = float(infections)
-		print(f"Storing infections {self.name}:  {inf_float * self.stats.p_selfisolate}, {inf_float * self.stats.p_pre_icu}, {inf_float * self.stats.p_urgent_icu_vent}, {inf_float * self.stats.p_urgent_icu_novent}")
-		self.isolated.store_pending(inf_float * self.stats.p_selfisolate)
-		self.nevercrit.store_pending(inf_float * self.stats.p_nevercrit)
-		self.pre_icu.store_pending(inf_float * self.stats.p_pre_icu)
-		self.icu_vent.store_pending(inf_float * self.stats.p_urgent_icu_vent)
-		self.icu_novent.store_pending(inf_float * self.stats.p_urgent_icu_novent)
+		n_isolated = inf_float * self.stats.p_selfisolate
+		n_nevercrit = inf_float * self.stats.p_nevercrit
+		n_pre_icu = inf_float * self.stats.p_pre_icu
+		n_icu_vent = inf_float * self.stats.p_urgent_icu_vent
+		n_icu_novent = inf_float * self.stats.p_urgent_icu_novent
+
+#		print(f"Storing infections {self.name}:  {n_nevercrit}, {n_pre_icu}, {n_icu_vent}, {n_icu_novent}")
+		self.isolated.store_pending(n_isolated)
+		self.nevercrit.store_pending(n_nevercrit)
+		self.pre_icu.store_pending(n_pre_icu)
+		self.icu_vent.store_pending(n_icu_vent)
+		self.icu_novent.store_pending(n_icu_novent)
+
 
 
 	def calculate_redistributions(self):
@@ -100,6 +90,7 @@ class PathsByAge:
 
 	def apply_pending(self):
 		self.isolated.apply_pending()
+
 		# self.ed_to_floor.apply_pending()
 		# self.ed_to_icu.apply_pending()
 		self.nevercrit.apply_pending()

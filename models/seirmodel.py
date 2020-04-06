@@ -4,26 +4,49 @@ import numpy as np
 from scipy.integrate import odeint
 
 from models.epidemicmodel import EpidemicModel
+from models.basic_math import calc_beta
 from parts.constants import *
 
 # Adding exposed delay before infectious
 # https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology
-class SEIRModel(EpidemicModel):
+class SEIRModel:
 	def __init__(self):
-		super().__init__()
-		# ref: https://annals.org/aim/fullarticle/2762808/incubation-period-coronavirus-disease-2019-covid-19-from-publicly-reported
+		self.population = POP_DENVER
+		self.dayspergen = 6.8
+		self.r0 = 2.65
+		# Infections caused while infected
+		self.beta = calc_beta(self.r0, self.dayspergen)
+		# Recoveries of infected per day
+		self.gamma = 1.0 / self.dayspergen
+
+		self.susceptible = self.population - 1
+		self.infected = 1
+		self.recovered = 0
+
+		self.total_days = 0
+
+		self.S_domain = []
+		self.E_domain = []
+		self.I_domain = []
+		self.R_domain = []
+
 		self.incubation = 0
 		self.exposed = 0
 		self.daystoisolation = 0
 		self.daystorecovery = 0
-		self.E_domain = []
 		self.alpha = 0.2
 		self.time_domain = None
 
 	def reset(self):
-		super().reset()
+		self.susceptible = self.population - 1
+		self.infected = 1
+		self.recovered = 0
 		self.exposed = 0
+		self.total_days = 0
+		self.S_domain = []
 		self.E_domain = []
+		self.I_domain = []
+		self.R_domain = []
 
 	def set_exposed(self, value):
 		self.exposed = value
@@ -35,9 +58,9 @@ class SEIRModel(EpidemicModel):
 		self.daystoisolation = value
 
 	def recalculate(self):
-		days_infectious = self.dayspergen - self.incubation
+		days_infectious = (self.dayspergen - self.incubation) * 2
 		self.alpha = 1.0 / self.incubation
-		self.beta = self.r0 / days_infectious
+		self.beta = calc_beta(self.r0, self.dayspergen)
 		self.gamma = 1.0 / self.daystoisolation
 
 	def run_period(self, days):

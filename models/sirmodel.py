@@ -4,6 +4,7 @@ import numpy as np
 from scipy.integrate import odeint
 
 from models.epidemicmodel import EpidemicModel
+from models.basic_math import calc_beta
 from parts.constants import *
 
 # SIR Model
@@ -29,7 +30,7 @@ class SIRModel(EpidemicModel):
 		super().reset()
 
 	def recalculate(self):
-		self.beta = self.r0 / self.dayspergen
+		self.beta = calc_beta(self.r0, self.dayspergen)
 		self.gamma = 1.0 / self.dayspergen
 
 	def run_period(self, days):
@@ -49,7 +50,7 @@ class SIRModel(EpidemicModel):
 
 	def run_r0_set(self, date_offsets, beta_values):
 		self.susceptible = self.population - self.infected - self.recovered
-		self.beta = self.r0 / self.dayspergen
+		self.beta = calc_beta(self.r0, self.dayspergen)
 
 		prev_date = 0
 		for itr in range(0, len(date_offsets)):
