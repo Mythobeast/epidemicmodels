@@ -130,7 +130,6 @@ class EpiScenario:
 		r2_hold = math.sqrt(r0_r2)
 		avg_r0 /= len(self.r0_values)
 
-
 #		print(f"while {cursor} < {final_offset}, {ideal['start']}, {ideal['end']}")
 
 		### For fitting "currently hospitalized"

@@ -173,7 +173,7 @@ class ScenarioDrivenModel:
 
 	def generate_png(self):
 
-		hospitalized = self.scenario.sum_hospitalized
+		hospitalized = self.scenario.hospital_door_aggregator
 
 		startdate = self.scenario.initial_date
 		time_domain = [startdate]
