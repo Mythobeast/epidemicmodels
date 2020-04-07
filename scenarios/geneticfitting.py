@@ -35,8 +35,6 @@ def mutate_r0(this_r0):
 	adjust_max = this_r0 / 5
 	return (random.random() * adjust_max) - (adjust_max/2)
 
-
-
 def mutate_scenario(scenario):
 	newparms = json.loads(json.dumps(scenario.parameters))
 
