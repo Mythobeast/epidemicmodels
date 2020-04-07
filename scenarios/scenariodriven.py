@@ -188,43 +188,84 @@ class ScenarioDrivenModel:
 		# ax = fig.add_subplot(111, axis_bgcolor='#dddddd', axisbelow=True)
 		ax = fig.add_subplot(111, axisbelow=True)
 
-	###   Lines for comparison to actual
+	### Vertical line indicating today
+		plt.axvline(x=datetime.today(), alpha=.5, lw=2, label='Today')
+
+
+	#-------------
+	#  Actual numbers, displayed when GA fitting
+	#-------------
 		act_hosp, act_death = self.actual_curves()
 	###   Actual Hospitalized, as specified in the constants
 		ax.plot(time_domain, act_hosp, color=(0, 0, .5), alpha=1, lw=2, label='Actual Hospitalized', linestyle='-')
 	###   Actual Deaths, as specified in the constants
 		ax.plot(time_domain, act_death, color=(0, 0, .5), alpha=1, lw=2, label='Actual Deaths', linestyle='-')
 
+	#-------------
+	#  Basic SEIR
+	#-------------
 	###   Susceptible line, usually too tall
-#		ax.plot(time_domain, self.scenario.out_susceptible, color=(0, 0, 1), alpha=.5, lw=2, label='Susceptible', linestyle='-')
+#		ax.plot(time_domain, self.scenario.out_susceptible, label='Susceptible', color=(0, 0, 1), alpha=.5, lw=2, linestyle='-')
+	###   Exposed: pre-symptomatic, not infectious yet
+#   	ax.plot(time_domain, self.scenario.incubating,      label='Exposed',     color=TABLEAU_ORANGE, alpha=0.1, lw=2, linestyle='-')
+	###   Infectious patients, not isolated
+#   	ax.plot(time_domain, self.scenario.infectious,      label='Infected',    color=TABLEAU_RED, alpha=0.5, lw=2, linestyle='-')
 	###   Recovered/immune, usually too tall
-#   	ax.plot(time_domain, self.scenario.sum_recovered, color=(0, .5, 0), alpha=.5, lw=2, label='Recovered', linestyle='--')
-
-	###   Infected patients who aren't infectious yet
-#   	ax.plot(time_domain, self.scenario.incubating, color=TABLEAU_ORANGE, alpha=0.1, lw=2, label='Exposed', linestyle='-')
-	###   Infectious patients who don't know they have it
-#   	ax.plot(time_domain, self.scenario.infectious, color=TABLEAU_RED, alpha=0.5, lw=2, label='Infected', linestyle='-')
-	###   Known and unknown infected, isolated at home
-#   	ax.plot(time_domain, self.scenario.sum_isolated, color=TAB_COLORS[8], alpha=.5, lw=2, label='Home Iso', linestyle='-')
-
-	###   Hospital floor patients
-#		ax.plot(time_domain, self.scenario.sum_floor, color=TABLEAU_BLUE, alpha=1, lw=2, label='Noncrit', linestyle='--')
-	###   Non-ventilated ICU patients
-		ax.plot(time_domain, self.scenario.sum_icu, color=TABLEAU_GREEN, alpha=1, lw=2, label='ICU', linestyle='--')
-	###   Ventilated ICU patients
-#		ax.plot(time_domain, self.scenario.sum_vent, color=TABLEAU_RED, alpha=1, lw=2, label='ICU + Ventilator', linestyle='--')
-	###   Total hospitalized in all areas
-		ax.plot(time_domain, hospitalized, color=(1, 0, 0), alpha=.25, lw=2, label='Total Hospitalized', linestyle='-')
+#   	ax.plot(time_domain, self.scenario.sum_recovered,   label='Recovered',   color=(0, .5, 0), alpha=.5, lw=2, linestyle='--')
+	###   Infected, isolated at home
+#   	ax.plot(time_domain, self.scenario.sum_isolated,    label='Home Iso',    color=TAB_COLORS[8], alpha=.5, lw=2, linestyle='-')
 	###   Deceased
-#		ax.plot(time_domain, self.scenario.sum_deceased, color=(.25, .25, 0), alpha=.5, lw=2, label='Recovered', linestyle='--')
+#		ax.plot(time_domain, self.scenario.sum_deceased,    label='Deceased',    color=(.25, .25, 0), alpha=.5, lw=2, linestyle='--')
 
-	###   Max non-icu capacity
-#		ax.plot(time_domain, [229] * (self.total_days + 1), color=(0, 0, 1), alpha=1, lw=1, label='229 Floor beds', linestyle='-')
-	###   Max ICU capacity
-#		ax.plot(time_domain, [86] * (self.total_days + 1), color=(1, 0, 0), alpha=1, lw=1, label='86 ICU units', linestyle='-')
+	#-------------
+	#  Hospital Capacities
+	#-------------
+#		ax.plot(time_domain, self.scenario.sum_floor, label='Floor Beds',         color=TABLEAU_BLUE, alpha=1, lw=2, linestyle='--')
+		ax.plot(time_domain, self.scenario.sum_icu,   label='ICU Beds',           color=TABLEAU_GREEN, alpha=1, lw=2, linestyle='--')
+#		ax.plot(time_domain, self.scenario.sum_vent,  label='ICU + Vent Beds',    color=TABLEAU_RED, alpha=1, lw=2, linestyle='--')
+		ax.plot(time_domain, hospitalized,            label='Total Hospitalized', color=(1, 0, 0), alpha=.25, lw=2, linestyle='-')
 
-	### Vertical line indicating today
-		plt.axvline(x=datetime.today(), alpha=.5, lw=2, label='Today')
+	#-------------
+	#  Hospital Capacities - DH Specific
+	#-------------
+#		ax.plot(time_domain, [86] * (self.total_days + 1) , label='Supply - DH ICU Beds'  , color=(1, 0, 0), alpha=1, lw=1, linestyle='-')
+#		ax.plot(time_domain, [229] * (self.total_days + 1), label='Supply - DH Total Beds', color=(0, 0, 1), alpha=1, lw=1, linestyle='-')
+
+	#-------------
+	#  Hospital Capacities - Denver County
+	#-------------
+#		ax.plot(time_domain, [695] * (self.total_days + 1) , label='Supply - 5C ICU Beds'  , color=(1, 0, 0), alpha=1, lw=1, linestyle='-')
+#		ax.plot(time_domain, [5907] * (self.total_days + 1), label='Supply - 5C Total Beds', color=(0, 0, 1), alpha=1, lw=1, linestyle='-')
+#		ax.plot(time_domain, [1043] * (self.total_days + 1), label='Supply - 5C ICU Beds'  , color=(1, 0, 0), alpha=1, lw=1, linestyle='-')
+#		ax.plot(time_domain, [8861] * (self.total_days + 1), label='Supply - 5C Total Beds', color=(0, 0, 1), alpha=1, lw=1, linestyle='-')
+
+	#-------------
+	#  Hospital Capacities - Five County
+	#-------------
+#		ax.plot(time_domain, [255] * (self.total_days + 1) , label='Supply - 5C ICU Beds'  , color=(1, 0, 0), alpha=1, lw=1, linestyle='-')
+#		ax.plot(time_domain, [1000] * (self.total_days + 1), label='Supply - 5C Total Beds', color=(0, 0, 1), alpha=1, lw=1, linestyle='-')
+#		ax.plot(time_domain, [1043] * (self.total_days + 1), label='Supply - 5C ICU Beds'  , color=(1, 0, 0), alpha=1, lw=1, linestyle='-')
+#		ax.plot(time_domain, [4135] * (self.total_days + 1), label='Supply - 5C Total Beds', color=(0, 0, 1), alpha=1, lw=1, linestyle='-')
+
+    # ------------
+    # Hospital Capacities - Five County - 50%
+    # ------------
+#       ax.plot(time_domain, [348] * (model.total_days + 1) , label='Supply - 5County ICU', color=(0, 0, 1), alpha=1, lw=1, linestyle='--')
+#       ax.plot(time_domain, [2954] * (model.total_days + 1), label='Supply - 5County Tot', color=(1, 0, 0), alpha=1, lw=1, linestyle='-')
+#       ax.plot(time_domain, [521] * (model.total_days + 1) , label='1.5x 5County ICU'    , color=(0, 0, 1), alpha=1, lw=1, linestyle='--')
+#       ax.plot(time_domain, [4430] * (model.total_days + 1), label='1.5x 5County Tot'    , color=(1, 0, 0), alpha=1, lw=1, linestyle='-')
+
+    #make pretty
+
+    # set the style of the axes and the text color
+		plt.rcParams['axes.edgecolor'] = '#333F4B'
+		plt.rcParams['axes.linewidth'] = 0.8
+		plt.rcParams['xtick.color'] = '#333F4B'
+		plt.rcParams['ytick.color'] = '#333F4B'
+		plt.rcParams['text.color'] = '#333F4B'
+
+    # set axis
+		ax.tick_params(axis='both', which='major', labelsize=12)
 
 		ax.set_xlabel('Days')
 		ax.set_ylabel('Number')
