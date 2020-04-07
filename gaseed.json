@@ -4,7 +4,7 @@
   "incubation_period": 3.0,
   "prediagnosis_period": 3.8,
   "chart_min": 80,
-  "chart_period": 100,
+  "chart_period": 60,
   "initial_date": "2020-01-27",
   "initial_r0": 3.0,
   "r0_shifts":
