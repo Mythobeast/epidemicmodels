@@ -2,11 +2,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import odeint
 
-from amortizedmarkov import ProbState
-from constants import *
+from parts.amortizedmarkov import ProbState
+from parts.constants import *
+from models.basic_math import calc_beta
 
 # The SEIR model differential equations.
-def deriv_seirh(y, t, model):
+def deriv_seirh(y, _, model):
 	(i_susceptible, i_incubating, i_infectious, i_isolated, i_noncritical,
 	 h_critical, h_icu, recovered, dead) = y
 	new_infections = model.beta * i_susceptible * i_infectious / model.population
@@ -40,6 +41,7 @@ class SEIRHModel:
 		self.r0 = 2.65
 		self.total_days = 0
 		self.population = POP_DENVER
+		self.beta = None
 
 		self.susceptible = ProbState(period=0, count=self.population)
 		self.incubating = ProbState(period=3)
@@ -89,14 +91,11 @@ class SEIRHModel:
 	def set_r0(self, value):
 		self.r0 = value
 
-	def set_mean_generation_days(self, value):
-		self.dayspergen = value
-
 	def set_population(self, value):
 		self.population = value
 
 	def recalculate(self):
-		self.beta = self.r0 / self.infectious.period
+		self.beta = calc_beta(self.r0, self.dayspergen)
 
 	def run_period(self, days):
 		time_domain = np.linspace(0, days, days + 1)
@@ -111,7 +110,6 @@ class SEIRHModel:
 				self.h_icu.count,
 				self.recovered.count,
 				self.dead.count)
-		print(f"{init}")
 		# Integrate the SIR equations over the time grid, t.
 		results = odeint(deriv_seirh, init, time_domain, args=(self,))
 		(d_susceptible, d_incubating, d_infectious, d_isolated, d_noncritical,
@@ -133,14 +131,14 @@ class SEIRHModel:
 		prev_date = 0
 		for itr in range(0, len(date_offsets)):
 			self.set_r0(r0_values[itr])
-			self.recalculate()
+			self.beta = calc_beta(self.r0, self.dayspergen)
 			span = date_offsets[itr] - prev_date + 1
 			self.run_period(span)
 			prev_date = date_offsets[itr]
 
 
 # The SEIR model differential equations.
-def deriv_seir(y, t, N, alpha, beta, gamma):
+def deriv_seir(y, _, N, alpha, beta, gamma):
 	S_0, E_0, I_0, R_0 = y
 	infections = beta * S_0 * I_0 / N
 	symptomatic = alpha * E_0

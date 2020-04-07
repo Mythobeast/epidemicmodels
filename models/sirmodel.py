@@ -3,21 +3,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import odeint
 
-from epidemicmodel import EpidemicModel
-from constants import *
+from models.epidemicmodel import EpidemicModel
+from models.basic_math import calc_beta
+from parts.constants import *
 
 # SIR Model
 # Loosely based on https://scipython.com/book/chapter-8-scipy/additional-examples/the-sir-epidemic-model/
 
-def deriv_sir(y, t, model):
+def deriv_sir(y, model):
 	S_0, I_0, R_0 = y
-	print(f"{S_0}, {I_0}, {R_0} {model.gamma}")
 
 	infections = model.beta * S_0 * I_0 / model.population
 
 	recoveries = model.gamma * I_0
-
-	print(f"Returning:inf {infections}, rec {recoveries}")
 
 	dSdt = -infections
 	dIdt = infections - recoveries
@@ -32,7 +30,7 @@ class SIRModel(EpidemicModel):
 		super().reset()
 
 	def recalculate(self):
-		self.beta = self.r0 / self.dayspergen
+		self.beta = calc_beta(self.r0, self.dayspergen)
 		self.gamma = 1.0 / self.dayspergen
 
 	def run_period(self, days):
@@ -51,8 +49,8 @@ class SIRModel(EpidemicModel):
 		self.recovered = self.R_domain.pop()
 
 	def run_r0_set(self, date_offsets, beta_values):
-		self.susceptible = self.population - self.infected - self.recovered - self.exposed
-		self.beta = self.r0 / self.dayspergen
+		self.susceptible = self.population - self.infected - self.recovered
+		self.beta = calc_beta(self.r0, self.dayspergen)
 
 		prev_date = 0
 		for itr in range(0, len(date_offsets)):
@@ -79,14 +77,15 @@ def test_sir():
 	fig = plt.figure(facecolor='w')
 	# ax = fig.add_subplot(111, axis_bgcolor='#dddddd', axisbelow=True)
 	ax = fig.add_subplot(111, axisbelow=True)
-	ax.plot(time_domain, Su,  color=TABLEAU_BLUE, alpha=0.5, lw=2, label='Susceptible', linestyle='-')
-	ax.plot(time_domain, Iu, color=TABLEAU_RED, alpha=0.5, lw=2, label='Infected', linestyle='-')
-	ax.plot(time_domain, Ru, color=TABLEAU_GREEN, alpha=0.5, lw=2, label='Recovered', linestyle='-')
+	
+	ax.plot(time_domain, Su, color=TABLEAU_BLUE, alpha=0.5, lw=2,  label='Susceptible', linestyle='-')
+	ax.plot(time_domain, Iu, color=TABLEAU_RED,   alpha=0.5, lw=2, label='Infected',    linestyle='-')
+	ax.plot(time_domain, Ru, color=TABLEAU_GREEN, alpha=0.5, lw=2, label='Recovered',   linestyle='-')
 
 	ax.set_xlabel('Days')
-	ax.set_ylabel('Number')
+	ax.set_ylabel('Population')
 
-	chart_title = f"COVID-19 SIR Model | Denver | R0=2.65 | 6.8 Days per Generation"
+	chart_title = f"COVID-19 SIR Model | Denver | R0={BASE_R0} | 6.8 Days per Generation"
 	plt.title(chart_title, fontsize=14)
 	# ax.set_ylim(0,1.2)
 	ax.yaxis.set_tick_params(length=4)

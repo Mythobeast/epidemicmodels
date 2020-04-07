@@ -1,4 +1,5 @@
 
+from datetime import datetime
 
 BASE_R0 = 3.8
 
@@ -6,8 +7,38 @@ BASE_R0 = 3.8
 #dola denver est 2020 (july) 737855\
 POP_DENVER = 737855
 POP_DENVERMETRO = 2932415
+POP_COLORADO = 5696000
 POP_COLORADO_SPRINGS = 668000
 POP_WELD_COUNTY = 305274
+
+TIMINGS = {
+	'days home isolation': 14,
+	'days ed prefloor':     1,
+	'days ed preicu':       1,
+	'days noncrit':        10,
+	'days preicu':          4,
+	'days icu nonvent':     7,
+	'days icu vent':       10,
+	'days posticu':         4
+}
+
+
+COLORADO_ACTUAL = {
+	datetime(2020, 3, 18): {'hospitalized': 38, 'deaths': 2},
+	datetime(2020, 3, 19): {'hospitalized': 44, 'deaths': 4},
+	datetime(2020, 3, 20): {'hospitalized': 58, 'deaths': 5},
+	datetime(2020, 3, 21): {'hospitalized': 58, 'deaths': 6},
+	datetime(2020, 3, 22): {'hospitalized': 72, 'deaths': 7},
+	datetime(2020, 3, 23): {'hospitalized': 84, 'deaths': 11},
+	datetime(2020, 3, 24): {'hospitalized': 148, 'deaths': 19},
+	datetime(2020, 3, 25): {'hospitalized': 176, 'deaths': 24},
+	datetime(2020, 3, 26): {'hospitalized': 239, 'deaths': 31},
+	datetime(2020, 3, 27): {'hospitalized': 275, 'deaths': 44},
+	datetime(2020, 3, 28): {'hospitalized': 326, 'deaths': 47},
+	datetime(2020, 3, 29): {'hospitalized': 414, 'deaths': 51},
+	datetime(2020, 3, 30): {'hospitalized': 509, 'deaths': 69},
+}
+
 
 # Age group enumeration
 AGE0x = '0-9'
@@ -50,30 +81,17 @@ ICD = {
 	AGE8x: { 'hosp_rate': .273, 'crit_rate': .709, 'fatality': .093 }
 }
 
-# This class uses IC information to populate state-change percentages
-class SubgroupRates:
-	def __init__(self, icd, pop_dist):
-		self.pop_dist = pop_dist
-		self.isolate = 1 - icd['hosp_rate']
-		self.h_crit = icd['hosp_rate'] * icd['crit_rate']
-		self.h_noncrit = icd['hosp_rate'] - self.h_crit
-		self.icu_deathrate = icd['fatality'] / self.h_crit
-		self.icu_recovery_rate = 1 - self.icu_deathrate
-
-AGE_BASED_RATES = {
-	AGE0x: SubgroupRates(ICD[AGE0x], AGE_DISTRIBUTION[AGE0x]),
-	AGE1x: SubgroupRates(ICD[AGE1x], AGE_DISTRIBUTION[AGE1x]),
-	AGE2x: SubgroupRates(ICD[AGE2x], AGE_DISTRIBUTION[AGE2x]),
-	AGE3x: SubgroupRates(ICD[AGE3x], AGE_DISTRIBUTION[AGE3x]),
-	AGE4x: SubgroupRates(ICD[AGE4x], AGE_DISTRIBUTION[AGE4x]),
-	AGE5x: SubgroupRates(ICD[AGE5x], AGE_DISTRIBUTION[AGE5x]),
-	AGE6x: SubgroupRates(ICD[AGE6x], AGE_DISTRIBUTION[AGE6x]),
-	AGE7x: SubgroupRates(ICD[AGE7x], AGE_DISTRIBUTION[AGE7x]),
-	AGE8x: SubgroupRates(ICD[AGE8x], AGE_DISTRIBUTION[AGE8x])
-}
-
-
-
+# 53 ventilators
+#
+#
+# max 65
+#
+# icu 117
+# max_icu 139
+#
+# adult_floor  229
+#
+# non-covid load 100
 
 
 ## Make Pretty

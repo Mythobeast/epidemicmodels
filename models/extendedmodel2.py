@@ -2,8 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import odeint
 
-from amortizedmarkov import ProbState
-from constants import *
+from parts.amortizedmarkov import ProbState
+from parts.constants import *
+from models.basic_math import calc_beta
 
 
 MAX_HOSPITAL_LOAD = 20000
@@ -61,13 +62,12 @@ def adjust_for_overload(noncritical, critical, icu, d_noncritical, d_critical, d
 
 
 # The SEIR model differential equations.
-def deriv_seirh(y, t, model):
+def deriv_seirh(y, _, model):
 	(i_susceptible, i_incubating,
 		 i_infectious, i_isolated,
 		 i_noncritical, i_critical,
 		 i_icu, i_unhospitalized,
 		 i_recovered, i_dead) = y
-	print(f"y={y}")
 	pop_sum = (i_susceptible + i_incubating + i_infectious + i_isolated + i_noncritical + i_critical +
 		 i_icu + i_unhospitalized + i_recovered + i_dead)
 	if (pop_sum - POP_FRONTRANGE) > 10:
@@ -96,9 +96,7 @@ def deriv_seirh(y, t, model):
 	(d_noncritical, d_critical, d_icu, d_unhospitalized) = adjust_for_overload(
 		i_noncritical, i_critical, i_icu, d_noncritical, d_critical, d_icu, d_unhospitalized)
 
-	print(f"Outlist: {d_susceptible}, {d_incubating}, {d_infectious}, {d_isolated}, {d_noncritical},"\
-			f"{d_critical}, {d_icu}, {d_unhospitalized}, {d_recovered}, {d_dead}")
-	balances = (d_susceptible + d_incubating + d_infectious + d_isolated + d_noncritical + d_critical + \
+	balances = (d_susceptible + d_incubating + d_infectious + d_isolated + d_noncritical + d_critical +
 	           d_icu + d_unhospitalized + d_recovered + d_dead)
 	if int(balances) != 0:
 		raise ValueError(f"balances {balances} != 0")
@@ -113,6 +111,7 @@ class HospitalFullModel:
 		self.r0 = 2.65
 		self.total_days = 0
 		self.population = POP_DENVERMETRO - 1
+		self.beta = None
 
 		self.susceptible = ProbState(period=0, count=self.population)
 		self.incubating = ProbState(period=3)
@@ -168,14 +167,8 @@ class HospitalFullModel:
 	def set_r0(self, value):
 		self.r0 = value
 
-	def set_mean_generation_days(self, value):
-		self.dayspergen = value
-
 	def set_population(self, value):
 		self.population = value
-
-	def recalculate(self):
-		self.beta = self.r0 / self.infectious.period
 
 	def run_period(self, days):
 		time_domain = np.linspace(0, days, days + 1)
@@ -191,7 +184,6 @@ class HospitalFullModel:
 			self.unhospitalized.count,
 			self.recovered.count,
 			self.dead.count)
-		print(f"{init}")
 		# Integrate the SIR equations over the time grid, t.
 		results = odeint(deriv_seirh, init, time_domain, args=(self,))
 		(d_susceptible, d_incubating, d_infectious, d_isolated, d_noncritical,
@@ -210,8 +202,6 @@ class HospitalFullModel:
 
 
 	def run_period2(self, days):
-		time_domain = np.linspace(0, days, days + 1)
-
 		# Integrate the SIR equations over the time grid, t.
 		for _ in range(0, days):
 			self.step_day()
@@ -223,6 +213,8 @@ class HospitalFullModel:
 		prev_date = 0
 		for itr in range(0, len(date_offsets)):
 			self.set_r0(r0_values[itr])
+			self.beta = calc_beta(self.r0, self.dayspergen)
+
 			self.recalculate()
 			span = date_offsets[itr] - prev_date + 1
 			self.run_period2(span)
@@ -257,7 +249,7 @@ class HospitalFullModel:
 		(d_noncritical, d_critical, d_icu, d_unhospitalized) = adjust_for_overload(
 			self.h_noncritical.count, self.h_critical.count, self.h_icu.count,
 			d_noncritical, d_critical, d_icu, d_unhospitalized)
-		balances = (d_susceptible + d_incubating + d_infectious + d_isolated + d_noncritical + d_critical + \
+		balances = (d_susceptible + d_incubating + d_infectious + d_isolated + d_noncritical + d_critical +
 				d_icu + d_unhospitalized + d_recovered + d_dead)
 		if int(balances) != 0:
 			raise ValueError(f"balances {balances} != 0")
