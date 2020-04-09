@@ -150,7 +150,10 @@ class EpiScenario:
 
 		for key, value in ideal.items():
 			if key not in self.fitset:
-				raise ValueError(f"{key} not found in {self.fitset}")
+				raise ValueError(f"It looks like your fitness ideal has dates that exist before your outbreak's initial date.\n"
+				                 f"Ideal value date {key} was not found in the calculated series {self.fitset}\n"
+				                 f"You need to either constrain the initial dates below the first ideal date,"
+				                 f"or remove the earlier data points from your ideal.")
 			fitcount += 1
 #			print(f"comparing {self.fitset[key]['total_hosp']} to {value['hospitalized']}")
 			hosp_off = self.fitset[key]['total_hosp'] - value['hospitalized']
@@ -163,10 +166,13 @@ class EpiScenario:
 #			if death_off < 0:
 #				death_off = -death_off
 			dead_r2 += death_off ** 2
-			dead_avg += value['hospitalized']
+			dead_avg += value['deceased']
 
-		hosp_hold = math.sqrt(hosp_r2)
-		dead_hold = math.sqrt(dead_r2)
+		hosp_avg /= len(ideal)
+		dead_avg /= len(ideal)
+
+		hosp_hold = math.sqrt(hosp_r2) / hosp_avg
+		dead_hold = math.sqrt(dead_r2) / dead_avg
 #		print(f"hosp_hold = {hosp_hold}, dead_hold = {dead_hold}")
 
 		self.fitness =  hosp_hold + dead_hold + r2_hold/3
