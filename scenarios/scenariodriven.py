@@ -215,13 +215,13 @@ class ScenarioDrivenModel:
 	###   Infected, isolated at home
 #   	ax.plot(time_domain, self.scenario.sum_isolated,    label='Home Iso',    color=TAB_COLORS[8], alpha=.5, lw=2, linestyle='-')
 	###   Deceased
-#		ax.plot(time_domain, self.scenario.sum_deceased,    label='Deceased',    color=(.25, .25, 0), alpha=.5, lw=2, linestyle='--')
+		ax.plot(time_domain, self.scenario.sum_deceased,    label='Deceased',    color=(.25, .25, 0), alpha=.5, lw=2, linestyle='--')
 
 	#-------------
 	#  Hospital Capacities
 	#-------------
 #		ax.plot(time_domain, self.scenario.sum_floor, label='Floor Beds',         color=TABLEAU_BLUE, alpha=1, lw=2, linestyle='--')
-		ax.plot(time_domain, self.scenario.sum_icu,   label='ICU Beds',           color=TABLEAU_GREEN, alpha=1, lw=2, linestyle='--')
+#		ax.plot(time_domain, self.scenario.sum_icu,   label='ICU Beds',           color=TABLEAU_GREEN, alpha=1, lw=2, linestyle='--')
 #		ax.plot(time_domain, self.scenario.sum_vent,  label='ICU + Vent Beds',    color=TABLEAU_RED, alpha=1, lw=2, linestyle='--')
 		ax.plot(time_domain, hospitalized,            label='Total Hospitalized', color=(1, 0, 0), alpha=.25, lw=2, linestyle='-')
 
