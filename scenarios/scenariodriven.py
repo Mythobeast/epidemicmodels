@@ -12,7 +12,7 @@ from parts.constants import *
 from models.basic_math import calc_beta, calc_infected
 
 from scenarios.scenario import EpiScenario
-from scenarios.fitset import COLORADO_ACTUAL
+from scenarios.fitset import COLORADO_ACTUAL as FITSET
 
 
 class ScenarioDrivenModel:
@@ -160,9 +160,9 @@ class ScenarioDrivenModel:
 		act_death = []
 
 		while cursor < finaldate:
-			if cursor in COLORADO_ACTUAL:
-				act_hosp.append(COLORADO_ACTUAL[cursor]['hospitalized'])
-				act_death.append(COLORADO_ACTUAL[cursor]['deceased'])
+			if cursor in FITSET:
+				act_hosp.append(FITSET[cursor]['hospitalized'])
+				act_death.append(FITSET[cursor]['deceased'])
 			else:
 				act_hosp.append(None)
 				act_death.append(None)

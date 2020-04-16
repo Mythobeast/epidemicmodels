@@ -3,8 +3,6 @@ from pathlib import Path
 
 from pyhocon import ConfigFactory
 
-from dhutil.dhlog import getlog
-
 CONFIGLIST=dict()
 
 class HoConfig:
@@ -29,7 +27,6 @@ class HoConfig:
 			if not filechecker.is_file():
 				# Create an empty file, log a warning
 				open(filename, 'a').close()
-				getlog('config').error(f"Configuration file {filename} not found. Expect issues.")
 
 			HoConfig.instance = HoConfig.__HoConfig(filename)
 			CONFIGLIST[filename] = HoConfig.instance

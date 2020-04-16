@@ -140,7 +140,6 @@ class EpiScenario:
 		# 		midhosp = 1/midhosp
 		# 	hosp_sum += midhosp
 
-
 		### For fitting Colorado actual
 		hosp_r2 = 0
 		hosp_avg = 0

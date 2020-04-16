@@ -80,8 +80,16 @@ def get_sql_url(dbspec):
 
 class CovidDatastore:
 	def __init__(self, dbspec):
-		self.engine = create_engine(get_sql_url(dbspec))
-
+#		if dbspec['ENGINE'] == 'mssql':
+#			classes = dict([(name, cls) for name, cls in models.__dict__.items() if isinstance(cls, type)])
+#			for name, classdef in classes.items():
+#				if issubclass(classdef, models.Base):
+					# if name != 'Base':
+					# 	classdef.__table_args__ = {"schema": "coviddata"}
+					# 	print(f"adding to {name}, {classdef.__dict__}")
+		url = get_sql_url(dbspec)
+		print(f"Connecting to {url}")
+		self.engine = create_engine(url)
 		models.Base.metadata.create_all(self.engine)
 		self.DBSession = sessionmaker(bind=self.engine)
 		self.session = self.DBSession()
@@ -110,6 +118,7 @@ class CovidDatastore:
 		self.handlers['Cumulative Number of Deaths by Reported Date'] = self.insert_cum_deaths_by_reported
 		self.handlers['Transmission Type'] = self.insert_transmission_type
 		self.handlers['Positivity Data from Clinical Laboratories'] = self.insert_positivity_data
+		self.handlers['COVID-19 in Colorado by Race & Ethnicity'] = self.insert_race_and_ethnicity
 
 	def is_loaded(self, filename):
 		fileset = self.session.query(models.CaseSummaryFile).filter(models.CaseSummaryFile.filename==filename).first()
@@ -388,3 +397,17 @@ class CovidDatastore:
 			itemvalue=value)
 		self.session.add(insertable)
 		self.session.commit()
+
+	def insert_race_and_ethnicity(self, row):
+		_ = row.pop(0)
+		raceandeth = row.pop(0)
+		metric = row.pop(0)
+		value = row.pop(0).strip()
+		insertable = models.PercentRaceAndEthnicity(
+			summaryfiledate=self.reportdate,
+			raceeth=raceandeth,
+			metric=metric,
+			itemvalue=value)
+		self.session.add(insertable)
+		self.session.commit()
+

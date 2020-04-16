@@ -5,9 +5,12 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
+SCHEMADEF = {"schema": "coviddata"}
+
 class CaseSummaryFile(Base):
 	__tablename__ = 'summaryfile'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	filename = Column(String(250), nullable=False, unique=True)
@@ -17,7 +20,8 @@ class CaseSummaryFile(Base):
 
 class StateData(Base):
 	__tablename__ = 'statedata'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	summaryfiledate = Column(DateTime, nullable=False)
@@ -26,7 +30,8 @@ class StateData(Base):
 
 class CasesByCounty(Base):
 	__tablename__ = 'CasesByCounty'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	summaryfiledate = Column(DateTime, nullable=False)
@@ -36,7 +41,8 @@ class CasesByCounty(Base):
 
 class CasesByAgeGroup(Base):
 	__tablename__ = 'CasesByAgeGroup'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	summaryfiledate = Column(DateTime, nullable=False)
@@ -46,7 +52,8 @@ class CasesByAgeGroup(Base):
 
 class CasesBySex(Base):
 	__tablename__ = 'CasesBySex'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	summaryfiledate = Column(DateTime, nullable=False)
@@ -56,7 +63,8 @@ class CasesBySex(Base):
 
 class DeathsBySex(Base):
 	__tablename__ = 'DeathsBySex'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	summaryfiledate = Column(DateTime, nullable=False)
@@ -66,7 +74,8 @@ class DeathsBySex(Base):
 
 class CasesByOnsetdate(Base):
 	__tablename__ = 'CasesByOnsetdate'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	summaryfiledate = Column(DateTime, nullable=False)
@@ -76,7 +85,8 @@ class CasesByOnsetdate(Base):
 
 class CasesByReported(Base):
 	__tablename__ = 'CasesByReported'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	summaryfiledate = Column(DateTime, nullable=False)
@@ -86,7 +96,8 @@ class CasesByReported(Base):
 
 class DeathsByCounty(Base):
 	__tablename__ = 'DeathsByCounty'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	summaryfiledate = Column(DateTime, nullable=False)
@@ -96,7 +107,8 @@ class DeathsByCounty(Base):
 
 class CasesByAHD(Base):
 	__tablename__ = 'CasesByAHD'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	summaryfiledate = Column(DateTime, nullable=False)
@@ -104,9 +116,21 @@ class CasesByAHD(Base):
 	hospitalization = Column(String(200), nullable=False)
 	itemvalue = Column(Float, nullable=True)
 
+class PercentRaceAndEthnicity(Base):
+	__tablename__ = 'PercentRaceAndEthnicity'
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
+
+	id = Column(Integer, nullable=False, unique=True, primary_key=True)
+	summaryfiledate = Column(DateTime, nullable=False)
+	raceeth = Column(String(200), nullable=False)
+	metric = Column(String(200), nullable=False)
+	itemvalue = Column(Float, nullable=True)
+
 class PositivityData(Base):
 	__tablename__ = 'PositivityData'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	summaryfiledate = Column(DateTime, nullable=False)
@@ -116,7 +140,8 @@ class PositivityData(Base):
 
 class CumulativeCasesByOnsetdate(Base):
 	__tablename__ = 'CumulativeCasesByOnsetdate'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	summaryfiledate = Column(DateTime, nullable=False)
@@ -126,7 +151,8 @@ class CumulativeCasesByOnsetdate(Base):
 
 class CumulativeHospByOnsetdate(Base):
 	__tablename__ = 'CumulativeHospByOnsetdate'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	summaryfiledate = Column(DateTime, nullable=False)
@@ -136,7 +162,8 @@ class CumulativeHospByOnsetdate(Base):
 
 class CumulativeDeathByOnsetdate(Base):
 	__tablename__ = 'CumulativeDeathByOnsetdate'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	summaryfiledate = Column(DateTime, nullable=False)
@@ -146,7 +173,8 @@ class CumulativeDeathByOnsetdate(Base):
 
 class CumulativeCasesByReported(Base):
 	__tablename__ = 'CumulativeCasesByReported'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	summaryfiledate = Column(DateTime, nullable=False)
@@ -156,7 +184,8 @@ class CumulativeCasesByReported(Base):
 
 class CumulativeHospsByReported(Base):
 	__tablename__ = 'CumulativeHospsByReported'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	summaryfiledate = Column(DateTime, nullable=False)
@@ -166,7 +195,8 @@ class CumulativeHospsByReported(Base):
 
 class CumulativeDeathsByReported(Base):
 	__tablename__ = 'CumulativeDeathsByReported'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	summaryfiledate = Column(DateTime, nullable=False)
@@ -176,7 +206,8 @@ class CumulativeDeathsByReported(Base):
 
 class TransmissionType(Base):
 	__tablename__ = 'TransmissionType'
-	__table_args__ = {"schema": "coviddata"}
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
 
 	id = Column(Integer, nullable=False, unique=True, primary_key=True)
 	summaryfiledate = Column(DateTime, nullable=False)

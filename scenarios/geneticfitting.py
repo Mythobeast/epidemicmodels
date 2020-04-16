@@ -7,7 +7,7 @@ from operator import attrgetter
 from scenarios.scenario import EpiScenario
 from scenarios.scenariodriven import ScenarioDrivenModel
 
-from scenarios.fitset import COLORADO_ACTUAL
+from scenarios.fitset import COLORADO_ACTUAL as FITSET
 
 RUNCOUNT = 1001
 DATEFORMAT = "%Y-%m-%d"
@@ -61,7 +61,7 @@ def main_threaded():
 	for itr in range(0, 100):
 		scenarios.append(create_random_scenario())
 
-	ideal = COLORADO_ACTUAL
+	ideal = FITSET
 
 	print(f"Scenario {scenarios[0]}")
 	for iteration_counter in range(0, RUNCOUNT):
@@ -102,7 +102,7 @@ def main():
 	for itr in range(0, 100):
 		scenarios.append(create_random_scenario())
 
-	ideal = COLORADO_ACTUAL
+	ideal = FITSET
 
 	print(f"Scenario {scenarios[0]}")
 	for iteration_counter in range(0, RUNCOUNT):
