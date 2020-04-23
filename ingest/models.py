@@ -204,6 +204,18 @@ class CumulativeDeathsByReported(Base):
 	itemname = Column(String(200), nullable=False)
 	itemvalue = Column(Float, nullable=True)
 
+class DeathsByDeathDate(Base):
+	__tablename__ = 'DeathsByDeathDate'
+#	__table_args__ = {"schema": "coviddata"}
+	__table_args__ = SCHEMADEF
+
+	id = Column(Integer, nullable=False, unique=True, primary_key=True)
+	summaryfiledate = Column(DateTime, nullable=False)
+	deathdate = Column(String(200), nullable=False)
+	itemname = Column(String(200), nullable=False)
+	itemvalue = Column(Float, nullable=True)
+
+
 class TransmissionType(Base):
 	__tablename__ = 'TransmissionType'
 #	__table_args__ = {"schema": "coviddata"}

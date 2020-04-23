@@ -101,24 +101,41 @@ class CovidDatastore:
 	def assign_handlers(self):
 		self.handlers['State Data'] = self.insert_state_data
 		self.handlers['Case Counts by County'] = self.insert_cases_by_county
+		self.handlers['Colorado Case Counts by County'] = self.insert_cases_by_county
+		self.handlers['Case Rates Per 100,000 People in Colorado by County'] = self.insert_cases_by_county
+		self.handlers['Number of Deaths From COVID-19 in Colorado by Date of Death - By Day'] = self.insert_deaths_by_dateofdeath
 		self.handlers['Case Counts by Age Group'] = self.insert_cases_by_agegrp
+		self.handlers['COVID-19 in Colorado by Age Group'] = self.insert_cases_by_agegrp
 		self.handlers['Case Counts by Sex'] = self.insert_cases_by_sex
 		self.handlers['COVID-19 in Colorado by Sex'] = self.insert_cases_by_sex
 		self.handlers['Fatal cases by sex'] = self.insert_deaths_by_sex
 		self.handlers['Case Counts by Onset Date'] = self.insert_case_counts_by_onset
+		self.handlers['Cases of COVID-19 in Colorado by Date of Illness Onset'] = self.insert_case_counts_by_onset
 		self.handlers['Case Counts by Reported Date'] = self.insert_case_counts_by_reported
+		self.handlers['Cases of COVID-19 in Colorado by Date Reported to the State'] = self.insert_case_counts_by_reported
+
 		self.handlers['Deaths'] = self.insert_deaths_by_county
+		self.handlers['Number of Deaths by County'] = self.insert_deaths_by_county
 		self.handlers['Case Counts by Age Group, Hospitalizations, and Deaths'] = self.insert_case_counts_by_ahd
 		self.handlers['Case Counts by Age Group, Hospitalizations'] = self.insert_case_counts_by_ahd
 		self.handlers['Cumulative Number of Cases by Onset Date'] = self.insert_cum_cases_by_onset
-		self.handlers['Cumulative Number of Hospitalizations by Onset Date'] = self.insert_cum_hosp_by_onset
-		self.handlers['Cumulative Number of Deaths by Onset Date'] = self.insert_cum_deaths_by_onset
+		self.handlers['Cumulative Number of Hospitalized Cases of COVID-19 in Colorado by Date of Illness Onset'] = self.insert_cum_cases_by_onset
+		self.handlers['Cumulative Number of Cases of COVID-19 in Colorado by Date of Illness Onset'] = self.insert_cum_cases_by_onset
 		self.handlers['Cumulative Number of Cases by Reported Date'] = self.insert_cum_cases_by_reported
+		self.handlers['Cumulative Number of Cases of COVID-19 in Colorado by Date Reported to the State'] = self.insert_cum_cases_by_reported
+		self.handlers['Cumulative Number of Hospitalizations by Onset Date'] = self.insert_cum_hosp_by_onset
 		self.handlers['Cumulative Number of Hospitalizations by Reported Date'] = self.insert_cum_hosps_by_reported
+		self.handlers['Cumulative Number of Hospitalized Cases of COVID-19 in Colorado by Date Reported to the State'] = self.insert_cum_hosps_by_reported
+		self.handlers['Cumulative Number of Deaths by Onset Date'] = self.insert_cum_deaths_by_onset
+		self.handlers['Cumulative Number of Deaths From COVID-19 in Colorado by Date of Illness'] = self.insert_cum_deaths_by_onset
 		self.handlers['Cumulative Number of Deaths by Reported Date'] = self.insert_cum_deaths_by_reported
+		self.handlers['Cumulative Number of Deaths From COVID-19 in Colorado by Date Reported to the State'] = self.insert_cum_deaths_by_reported
+
+		self.handlers['Cumulative Number of Deaths From COVID-19 in Colorado by Date of Death'] = self.insert_cum_deaths_by_reported
 		self.handlers['Transmission Type'] = self.insert_transmission_type
 		self.handlers['Positivity Data from Clinical Laboratories'] = self.insert_positivity_data
 		self.handlers['COVID-19 in Colorado by Race & Ethnicity'] = self.insert_race_and_ethnicity
+
 
 	def is_loaded(self, filename):
 		fileset = self.session.query(models.CaseSummaryFile).filter(models.CaseSummaryFile.filename==filename).first()
@@ -380,6 +397,19 @@ class CovidDatastore:
 		insertable = models.CumulativeDeathsByReported(
 			summaryfiledate=self.reportdate,
 			reporteddate=reporteddate,
+			itemname=key,
+			itemvalue=value)
+		self.session.add(insertable)
+		self.session.commit()
+
+	def insert_deaths_by_dateofdeath(self, row):
+		_ = row.pop(0)
+		deathdate = extract_date(row.pop(0))
+		key = row.pop(0)
+		value = row.pop(0).strip()
+		insertable = models.DeathsByDeathDate(
+			summaryfiledate=self.reportdate,
+			deathdate=deathdate,
 			itemname=key,
 			itemvalue=value)
 		self.session.add(insertable)
